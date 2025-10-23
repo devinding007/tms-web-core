@@ -5,7 +5,7 @@
       人材データ管理
       <v-spacer />
       <v-btn v-if="mode === 'edit'" color="primary" prepend-icon="mdi-plus" @click="openEditor()"
-        >新規</v-btn
+        >追加登録</v-btn
       >
     </v-card-title>
     <v-card-text>
@@ -22,8 +22,7 @@
               label="BPフラグ"
               density="comfortable"
               style="max-width: 200px"
-              hide-details
-            />
+              hide-details />
           </div>
         </template>
       </SearchBar>
@@ -38,8 +37,7 @@
             :page="page"
             item-key="人材ID"
             class="elevation-1 rounded-lg"
-            @click:row="onClickRow"
-          >
+            @click:row="onClickRow">
             <template #item.BPフラグ="{ item }">
               <v-chip size="small" :color="item.BPフラグ === 0 ? 'primary' : 'secondary'">{{
                 item.BPフラグ === 0 ? '社員' : 'BP'
@@ -78,8 +76,7 @@
                   v-model="pageSize"
                   density="compact"
                   label="ページサイズ"
-                  style="max-width: 140px"
-                />
+                  style="max-width: 140px" />
                 <v-pagination v-model="page" :length="pageCount" @update:modelValue="fetchList" />
               </div>
             </template>
@@ -93,8 +90,7 @@
     v-if="mode === 'edit'"
     v-model:open="editorOpen"
     :item="editing"
-    @saved="fetchList"
-  />
+    @saved="fetchList" />
   <SkillEditorModal v-if="mode === 'edit'" v-model:open="skillOpen" :personnel-id="skillTargetId" />
   <ErrorDialog v-model:open="errorOpen" :message="errorMessage" />
 </template>

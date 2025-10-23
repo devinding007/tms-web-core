@@ -2,15 +2,15 @@ import type { ApiListResult } from '@/types/api';
 import type { ExamPaper, ExamPaperProblem } from '@/types/models/ExamPaper';
 import type { Question } from '@/types/models/Question';
 
-function delay<T>(data: T, ms = 600): Promise<T> {
-  return new Promise((r) => setTimeout(() => r(data), ms));
-}
-
 const nowISO = () => new Date().toISOString();
 const uuid = () =>
   (globalThis.crypto && 'randomUUID' in globalThis.crypto
     ? (globalThis.crypto as any).randomUUID()
     : Math.random().toString(36).slice(2)) as string;
+
+function delay<T>(data: T, ms = 600): Promise<T> {
+  return new Promise((r) => setTimeout(() => r(data), ms));
+}
 
 let PAPERS: ExamPaper[] = [
   {
@@ -28,7 +28,6 @@ export interface PaperFilters {
   説明?: string;
   keyword?: string;
 }
-
 export async function listExamPapers(
   filters: PaperFilters,
   page = 1,
@@ -75,7 +74,6 @@ export async function deleteExamPaper(id: string): Promise<void> {
   return delay(undefined, 500);
 }
 
-/** AI一括生成（ダミー）：Question配列を返す */
 export interface AIGenerateCond {
   skills: string[];
   levelFrom: number;
@@ -87,17 +85,18 @@ export async function aiBulkGeneratePaperProblems(cond: AIGenerateCond): Promise
   const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)] || 'General';
   for (let i = 0; i < cond.count; i++) {
     const skill = pick(cond.skills.length ? cond.skills : ['General']);
-    const qid = uuid();
-    const choices = new Array(4).fill(0).map(() => ({
-      選択肢ＩＤ: uuid(),
-      選択肢文章: `${skill} の選択肢`,
-      回答理由: `${skill} に関する説明`,
-    }));
+    const choices = new Array(4)
+      .fill(0)
+      .map((_, j) => ({
+        選択肢ＩＤ: uuid(),
+        選択肢文章: `${skill} の選択肢 ${j + 1}`,
+        回答理由: `${skill} に関する説明 ${j + 1}`,
+      }));
     const correct = choices[0].選択肢ＩＤ;
     list.push({
-      問題ＩＤ: qid,
+      問題ＩＤ: uuid(),
       問題文章: `${skill} に関する自動生成問題 ${i + 1}`,
-      難易度: Math.min(cond.levelTo, Math.max(cond.levelFrom, 1)),
+      難易度: Math.max(1, Math.min(10, cond.levelFrom)),
       スキル: skill,
       模範回答: correct,
       模範回答理由: 'AIにより自動選定。',
@@ -106,20 +105,20 @@ export async function aiBulkGeneratePaperProblems(cond: AIGenerateCond): Promise
       削除フラグ: 0,
     } as any);
   }
-  return delay(list, 1200);
+  return delay(list, 800);
 }
 
-/** Question → ExamPaperProblem へ変換（IDは新規採番） */
 export function mapQuestionToPaperProblem(question: Question, paperId: string): ExamPaperProblem {
+  const uuidLocal = uuid;
   const idMap: Record<string, string> = {};
   const newChoices = question.選択肢.map((c) => {
-    const nid = uuid();
+    const nid = uuidLocal();
     idMap[c.選択肢ＩＤ as string] = nid;
     return { ...c, 選択肢ＩＤ: nid };
   });
   const mapped: ExamPaperProblem = {
-    試験用紙問題ＩＤ: uuid(),
-    試験用紙ＩＤ: paperId,
+    試験用紙問題ＩＤ: uuidLocal(),
+    試験用紙ＩＤ: paperId as any,
     問題文章: question.問題文章,
     難易度: question.難易度,
     スキル: question.スキル,
