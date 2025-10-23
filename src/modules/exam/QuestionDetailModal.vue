@@ -20,24 +20,21 @@
             :model-value="form.問題ＩＤ"
             label="問題ID (UUID)"
             disabled
-            :placeholder="isCreate ? '(フロントで採番／編集不可)' : ''"
-          />
+            :placeholder="isCreate ? '(フロントで採番／編集不可)' : ''" />
 
           <div class="grid md:grid-cols-2 gap-4">
             <v-select
               v-model="form.スキル"
               :items="skillOptions"
               label="スキル"
-              :disabled="isView"
-            />
+              :disabled="isView" />
             <v-text-field
               v-model.number="form.難易度"
               label="難易度 (1-10)"
               type="number"
               min="1"
               max="10"
-              :disabled="isView"
-            />
+              :disabled="isView" />
           </div>
 
           <v-textarea
@@ -45,8 +42,7 @@
             label="問題文章"
             rows="3"
             auto-grow
-            :disabled="isView"
-          />
+            :disabled="isView" />
 
           <div class="grid md:grid-cols-2 gap-4">
             <v-select
@@ -58,16 +54,14 @@
                 }))
               "
               label="模範回答（選択肢ID）"
-              :disabled="isView || form.選択肢.length === 0"
-            />
+              :disabled="isView || form.選択肢.length === 0" />
             <v-switch
               v-model="autoFlag"
               :true-value="1"
               :false-value="0"
               inset
               label="自動生成フラグ"
-              :disabled="isView"
-            />
+              :disabled="isView" />
           </div>
 
           <v-textarea
@@ -75,8 +69,7 @@
             label="模範回答理由"
             rows="2"
             auto-grow
-            :disabled="isView"
-          />
+            :disabled="isView" />
 
           <v-divider class="my-2" />
 
@@ -100,22 +93,19 @@
                       v-model="c.選択肢文章"
                       label="選択肢文章"
                       :disabled="isView"
-                      class="flex-1"
-                    />
+                      class="flex-1" />
                     <v-btn
                       v-if="!isView"
                       icon="mdi-delete"
                       color="error"
-                      @click="removeChoice(idx)"
-                    />
+                      @click="removeChoice(idx)" />
                   </div>
                 </div>
                 <v-textarea
                   v-model="c.回答理由"
                   label="回答理由（なぜ選/不選択か）"
                   auto-grow
-                  :disabled="isView"
-                />
+                  :disabled="isView" />
               </v-card-text>
             </v-card>
           </div>
@@ -171,7 +161,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, watch, toRaw, nextTick } from 'vue';
+  import { computed, reactive, ref, watch, nextTick } from 'vue';
   import type { Question, Choice } from '@/types/models/Question';
   import {
     listSkillOptions,
@@ -227,7 +217,7 @@
     get: () => form.自動生成フラグ,
     set: (v: number) => (form.自動生成フラグ = v as 0 | 1),
   });
-  const dirty = computed(() => JSON.stringify(toRaw(form)) !== original.value);
+  const dirty = computed(() => JSON.stringify(form) !== original.value);
 
   const choiceHeaders = []; // 未使用（テーブル→カード表示へ変更）
 
@@ -250,7 +240,7 @@
         if (q) Object.assign(form, JSON.parse(JSON.stringify(q)));
       }
       await nextTick();
-      original.value = JSON.stringify(toRaw(form));
+      original.value = JSON.stringify(form);
     } catch (e) {
       errorMessage.value = '読み込みに失敗しました';
       errorOpen.value = true;
@@ -278,7 +268,7 @@
     try {
       saving.value = true;
       const res = await saveQuestion(form);
-      original.value = JSON.stringify(toRaw(form));
+      original.value = JSON.stringify(form);
       toast.show('保存しました', 'success');
       emit('saved', res);
       model.value = false;
