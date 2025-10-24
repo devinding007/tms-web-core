@@ -76,22 +76,22 @@ export async function deleteExamPaper(id: string): Promise<void> {
 
 export interface AIGenerateCond {
   skills: string[];
+  jobPosting?: string;
   levelFrom: number;
   levelTo: number;
   count: number;
 }
+
 export async function aiBulkGeneratePaperProblems(cond: AIGenerateCond): Promise<Question[]> {
   const list: Question[] = [];
   const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)] || 'General';
   for (let i = 0; i < cond.count; i++) {
     const skill = pick(cond.skills.length ? cond.skills : ['General']);
-    const choices = new Array(4)
-      .fill(0)
-      .map((_, j) => ({
-        選択肢ＩＤ: uuid(),
-        選択肢文章: `${skill} の選択肢 ${j + 1}`,
-        回答理由: `${skill} に関する説明 ${j + 1}`,
-      }));
+    const choices = new Array(4).fill(0).map((_, j) => ({
+      選択肢ＩＤ: uuid(),
+      選択肢文章: `${skill} の選択肢 ${j + 1}`,
+      回答理由: `${skill} に関する説明 ${j + 1}`,
+    }));
     const correct = choices[0].選択肢ＩＤ;
     list.push({
       問題ＩＤ: uuid(),
