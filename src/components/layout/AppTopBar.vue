@@ -22,6 +22,9 @@
     <v-btn icon :to="{ path: '/exam-runs' }" title="試験実施管理"
       ><v-icon>mdi-clipboard-text</v-icon></v-btn
     >
+    <v-btn icon :to="{ path: '/exam-session' }" title="試験実施"
+      ><v-icon>mdi-lead-pencil</v-icon></v-btn
+    >
     <v-snackbar
       v-model="snackbarModel"
       location="top right"

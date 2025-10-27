@@ -1,2 +1,10 @@
 $body-font-family: 'Inter', 'Noto Sans JP', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
   Roboto, 'Helvetica Neue', Arial;
+
+:root {
+  /* hover時や行ホバーなど、少しだけ色を乗せたいとき */
+  --hover-bg-color: rgba(25, 25, 210, 0.1);
+
+  /* 回答済みカードなど、さらに淡く塗り分けたいとき */
+  --answered-bg-color: rgba(25, 118, 210, 0.02);
+}

@@ -5,6 +5,7 @@ import SkillView from '@/views/SkillView.vue';
 import QuestionView from '@/views/QuestionView.vue';
 import ExamPaperView from '@/views/ExamPaperView.vue';
 import ExamRunView from '@/views/ExamRunView.vue';
+import ExamExecutionView from '@/views/ExamExecutionView.vue';
 
 export default createRouter({
   history: createWebHistory(),
@@ -16,5 +17,6 @@ export default createRouter({
     { path: '/questions', component: QuestionView },
     { path: '/exam-papers', component: ExamPaperView },
     { path: '/exam-runs', component: ExamRunView },
+    { path: '/exam-session', component: ExamExecutionView },
   ],
 });

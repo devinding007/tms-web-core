@@ -41,6 +41,24 @@
       </v-card-text>
     </v-card>
 
+    <v-card class="mb-4">
+      <v-card-title class="d-flex align-center ga-2">
+        <v-icon>mdi-eye</v-icon> 試験実施デモ <v-spacer />
+
+        <v-text-field
+          v-model="examLinkId"
+          label="試験リンクID"
+          hide-details
+          density="comfortable"
+          style="max-width: 280px" />
+
+        <v-btn color="primary" prepend-icon="mdi-lead-pencil" @click="openExamSession"
+          >試験実施</v-btn
+        >
+      </v-card-title>
+      <v-card-text> </v-card-text>
+    </v-card>
+
     <PersonnelSelectModal v-model:open="selectOpenPersonnel" @selected="onSelectedPersonnel" />
     <QuestionListDialog
       v-model:open="selectOpenQuestion"
@@ -50,9 +68,13 @@
 </template>
 <script setup lang="ts">
   import { ref } from 'vue';
+  import { useRouter } from 'vue-router';
+  const router = useRouter();
+
   import PersonnelSelectModal from '@/modules/personnel/PersonnelSelectModal.vue';
   import QuestionListDialog from '@/modules/exam/QuestionListDialog.vue';
   const selectOpenPersonnel = ref(false);
+  const examLinkId = ref('EX-7M2H-20251022');
   const selectedPersonnel = ref<any>(null);
   const openSelectPersonnel = () => (selectOpenPersonnel.value = true);
   const onSelectedPersonnel = (item: any) => {
@@ -63,5 +85,11 @@
   const openSelectQuestion = () => (selectOpenQuestion.value = true);
   const onSelectedQuestion = (item: any) => {
     selectedQuestion.value = item;
+  };
+  const openExamSession = () => {
+    router.push({
+      path: '/exam-session',
+      query: { examLinkId: examLinkId.value },
+    });
   };
 </script>
