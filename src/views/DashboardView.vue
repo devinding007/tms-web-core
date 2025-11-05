@@ -59,6 +59,46 @@
       <v-card-text> </v-card-text>
     </v-card>
 
+    <v-card class="mb-4">
+      <v-card-title class="d-flex align-center ga-2">
+        <v-icon>mdi-arrange-send-backward</v-icon> メッセージ表示 <v-spacer />
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-arrange-send-backward"
+          @click="toast.show('完了メッセージ', 'success')"
+          >完了メッセージ</v-btn
+        >
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-arrange-send-backward"
+          @click="toast.show('情報メッセージ', 'info')"
+          >情報メッセージ</v-btn
+        >
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-arrange-send-backward"
+          @click="toast.show('エラーメッセージ', 'error')"
+          >エラーメッセージ</v-btn
+        >
+      </v-card-title>
+      <v-card-text> </v-card-text>
+    </v-card>
+
+    <v-card class="mb-4">
+      <v-card-title class="d-flex align-center ga-2">
+        <v-icon>mdi-eye</v-icon> 人材経歴詳細 <v-spacer />
+        <v-spacer></v-spacer>
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-arrange-send-backward"
+          @click="selectOpenResumeDetail = true"
+          >人材経歴詳細</v-btn
+        >
+      </v-card-title>
+      <v-card-text> </v-card-text>
+    </v-card>
+
+    <ResumeDetailModal v-model:open="selectOpenResumeDetail"></ResumeDetailModal>
     <PersonnelSelectModal v-model:open="selectOpenPersonnel" @selected="onSelectedPersonnel" />
     <QuestionListDialog
       v-model:open="selectOpenQuestion"
@@ -70,9 +110,14 @@
   import { ref } from 'vue';
   import { useRouter } from 'vue-router';
   const router = useRouter();
+  import { useToast } from '@/plugins/toast';
 
   import PersonnelSelectModal from '@/modules/personnel/PersonnelSelectModal.vue';
   import QuestionListDialog from '@/modules/exam/QuestionListDialog.vue';
+  import ResumeDetailModal from '@/modules/resume/ResumeDetailModal.vue';
+
+  const toast = useToast();
+  const selectOpenResumeDetail = ref(false);
   const selectOpenPersonnel = ref(false);
   const examLinkId = ref('EX-7M2H-20251022');
   const selectedPersonnel = ref<any>(null);

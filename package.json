@@ -16,7 +16,8 @@
     "qrcode": "^1.5.4",
     "vue": "^3.5.10",
     "vue-router": "^4.4.5",
-    "vuetify": "^3.6.10"
+    "vuetify": "^3.6.10",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.2/xlsx-0.20.2.tgz"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.6",

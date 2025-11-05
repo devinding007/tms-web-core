@@ -43,9 +43,12 @@
             item-key="試験ＩＤ"
             class="elevation-1 rounded-lg">
             <template #item.試験ステータス="{ item }"
-              ><v-chip size="small" color="primary" variant="tonal">{{
-                statusLabel(item.試験ステータス)
-              }}</v-chip></template
+              ><v-chip
+                size="small"
+                :color="EXAM_RUN_STATUS_COLOR[item.試験ステータス]"
+                variant="tonal"
+                >{{ statusLabel(item.試験ステータス) }}</v-chip
+              ></template
             >
             <template #item.actions="{ item }">
               <div class="d-flex ga-2">
@@ -88,7 +91,7 @@
   import { ref, onMounted, computed } from 'vue';
   import SearchBar from '@/components/shared/SearchBar.vue';
   import { listExamRuns } from './api';
-  import { EXAM_RUN_STATUS } from '@/types/codes';
+  import { EXAM_RUN_STATUS, EXAM_RUN_STATUS_COLOR } from '@/types/codes';
   import ExamRunDetailModal from './ExamRunDetailModal.vue';
   import type { ExamRun } from '@/types/models/ExamRun';
 

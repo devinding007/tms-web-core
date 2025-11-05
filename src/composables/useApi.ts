@@ -4,6 +4,8 @@ import type { Question } from '@/types/models/Question';
 import type { PersonnelSkillPayload, SkillItem } from '@/types/models/Skill';
 import type { ExamSession, ExamSubmissionPayload } from '@/types/models/Exam';
 
+import { useExamStore } from '@/store/examRunStore';
+
 const PERSONNEL: Personnel[] = [
   {
     人材ID: 'b9fcb3b2-6d88-41b7-b5b4-2f1d6b24cf32',
@@ -894,11 +896,19 @@ const SAMPLE_EXAM: ExamSession = {
 export async function fetchExamByLinkId(examLinkId: string): Promise<ExamSession | null> {
   // 疑似バックエンド呼び出し
   await delay(300);
-  if (examLinkId === SAMPLE_EXAM.試験リンクＩＤ) {
-    // ディープコピーで副作用防止
-    return JSON.parse(JSON.stringify(SAMPLE_EXAM));
+  const examStore = useExamStore();
+  const sessionList = examStore.examSession.filter((es) => es.試験リンクＩＤ == examLinkId);
+  if (sessionList.length > 0) {
+    return sessionList[0];
+  } else {
+    return null;
   }
-  return null;
+
+  // if (examLinkId === SAMPLE_EXAM.試験リンクＩＤ) {
+  //   // ディープコピーで副作用防止
+  //   return JSON.parse(JSON.stringify(SAMPLE_EXAM));
+  // }
+  // return null;
 }
 
 export function buildSubmissionPayload(

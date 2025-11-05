@@ -1,6 +1,8 @@
 import type { ApiListResult } from '@/types/api';
 import type { ExamPaper, ExamPaperProblem } from '@/types/models/ExamPaper';
 import type { Question } from '@/types/models/Question';
+import type { GenerationRequest } from '@/types/models/GenerationRequest';
+import { http } from '@/plugins/axios';
 
 const nowISO = () => new Date().toISOString();
 const uuid = () =>
@@ -83,6 +85,18 @@ export interface AIGenerateCond {
 }
 
 export async function aiBulkGeneratePaperProblems(cond: AIGenerateCond): Promise<Question[]> {
+  const request: GenerationRequest = {
+    levelFrom: String(cond.levelFrom),
+    levelTo: String(cond.levelTo),
+    jobPosting: String(cond.jobPosting),
+    skills: cond.skills.join(','),
+    number: String(cond.count),
+  };
+  const res = await invokeGenerateApi(request);
+  return res;
+}
+
+export async function aiBulkGeneratePaperProblems_fake(cond: AIGenerateCond): Promise<Question[]> {
   const list: Question[] = [];
   const pick = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)] || 'General';
   for (let i = 0; i < cond.count; i++) {
@@ -128,4 +142,17 @@ export function mapQuestionToPaperProblem(question: Question, paperId: string): 
     選択肢: newChoices,
   };
   return mapped;
+}
+
+export async function invokeGenerateApi(request: GenerationRequest): Promise<Question[]> {
+  try {
+    console.log(http);
+    const { data } = await http.post<Question[]>('/api/exam/generate', request);
+    if (!Array.isArray(data)) {
+      return [];
+    }
+    return data;
+  } catch (e) {
+    throw e;
+  }
 }

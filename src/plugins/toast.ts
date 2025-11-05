@@ -13,7 +13,7 @@ export function useToast() {
 export function useToastState() {
   return {
     message: readonly(message), // message は readonly のままでもOK
-    color: '', // ← readonly を外す
+    color: readonly(color), // ← readonly を外す
     open, // v-model 用にそのまま
   };
 }

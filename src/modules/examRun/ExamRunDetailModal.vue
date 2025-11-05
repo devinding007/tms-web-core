@@ -12,190 +12,258 @@
 
       <v-card-text v-else>
         <v-card variant="outlined">
-          <v-card-title class="text-subtitle-1 d-flex align-center ga-2"
-            ><v-icon>mdi-clipboard-text</v-icon> 試験基本情報</v-card-title
-          >
-          <v-card-text>
-            <v-row dense>
-              <v-col cols="12" md="6"
-                ><v-text-field
-                  label="試験ＩＤ"
-                  :model-value="form.試験ＩＤ || '(新規採番)'"
-                  disabled
-              /></v-col>
-              <v-col cols="12" md="6"
-                ><v-text-field
-                  v-model="form.参加者氏名"
-                  label="参加者氏名"
-                  :disabled="!isEditableBase"
-              /></v-col>
-              <v-col cols="12" md="6" class="d-flex align-center ga-3">
-                <v-checkbox
-                  v-model="form.登録済人材"
-                  :true-value="1"
-                  :false-value="0"
-                  label="登録済人材"
-                  :disabled="!isEditableBase" />
-                <v-btn
-                  v-if="isEditableBase && form.登録済人材 === 1"
-                  variant="tonal"
-                  prepend-icon="mdi-account-search"
-                  @click="personOpen = true"
-                  >人材選択</v-btn
-                >
-              </v-col>
-              <v-col cols="12" md="6"
-                ><v-text-field
-                  :model-value="form.参加者人材ＩＤ || '-'"
-                  label="参加者人材ＩＤ"
-                  disabled
-              /></v-col>
-              <v-col cols="12" md="6"
-                ><v-btn
-                  v-if="isEditableBase"
-                  color="secondary"
-                  prepend-icon="mdi-file-find"
-                  @click="paperOpen = true"
-                  >試験用紙選択</v-btn
-                ></v-col
-              >
-              <v-col cols="12" md="6"
-                ><v-text-field
-                  :model-value="form.試験用紙?.試験用紙ＩＤ || '-'"
-                  label="試験用紙ＩＤ"
-                  disabled
-              /></v-col>
-              <v-col cols="12" md="6" class="d-flex ga-2 align-center">
-                <v-btn
-                  v-if="isEditableBase"
-                  color="primary"
-                  prepend-icon="mdi-check-decagram"
-                  @click="onConfirmBase"
-                  >試験確定</v-btn
-                >
-                <v-btn
-                  v-if="form.試験リンクＩＤ"
-                  variant="tonal"
-                  prepend-icon="mdi-qrcode"
-                  @click="onQr"
-                  >試験QRコード生成</v-btn
-                >
-              </v-col>
-              <v-col cols="12" md="6"
-                ><v-text-field
-                  :model-value="form.試験リンクＩＤ || '-'"
-                  label="試験リンクＩＤ"
-                  disabled
-              /></v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-
-        <v-card variant="outlined" class="mt-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center ga-2"
-            ><v-icon>mdi-file-document-multiple</v-icon> 試験用紙</v-card-title
-          >
-          <v-card-text>
-            <template v-if="!form.試験用紙"
-              ><v-alert type="info" variant="tonal">試験用紙が未設定です。</v-alert></template
-            >
-            <template v-else>
-              <div class="d-flex flex-column" style="gap: 12px">
-                <div
-                  v-for="(p, idx) in form.試験用紙.問題リスト"
-                  :key="p.試験用紙問題ＩＤ"
-                  class="pa-3 rounded-lg"
-                  style="border: 1px dashed #e0e0e0">
-                  <div class="d-flex align-start ga-2">
-                    <div class="text-medium-emphasis">Q{{ idx + 1 }}.</div>
-                    <div class="flex-1">
-                      <div class="d-flex align-center flex-wrap ga-2 mb-1">
-                        <v-chip
-                          size="small"
-                          color="primary"
-                          variant="tonal"
-                          prepend-icon="mdi-tag"
-                          >{{ p.スキル }}</v-chip
-                        >
-                        <v-chip
-                          size="small"
-                          color="secondary"
-                          variant="tonal"
-                          prepend-icon="mdi-stairs"
-                          >難易度 {{ p.難易度 }}</v-chip
+          <v-card-title
+            class="text-subtitle-1 d-flex align-center ga-2"
+            @click="expandExamInfo = !expandExamInfo"
+            ><v-icon>mdi-clipboard-text</v-icon> 試験基本情報
+            <v-chip :color="examStatusColor">ステータス: {{ examStatusStr }}</v-chip>
+          </v-card-title>
+          <v-expand-transition>
+            <v-card-text v-show="expandExamInfo">
+              <v-row dense>
+                <v-col cols="12" md="12"
+                  ><v-text-field
+                    label="試験ＩＤ"
+                    :model-value="form.試験ＩＤ || '(新規採番)'"
+                    disabled
+                /></v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12" md="6"
+                  ><v-text-field
+                    v-model="form.参加者氏名"
+                    label="参加者氏名"
+                    :disabled="!isEditableBase || form.登録済人材 === 1"
+                /></v-col>
+                <v-col cols="12" md="6" class="d-flex flex-row align-center ga-3">
+                  <v-checkbox
+                    v-model="form.登録済人材"
+                    :true-value="1"
+                    :false-value="0"
+                    label="登録済人材"
+                    :disabled="!isEditableBase">
+                    <template #label>
+                      <div class="d-flex flex-column">
+                        <span>登録済人材</span>
+                        <span class="text-caption text-medium-emphasis"
+                          >登録済の場合は人材DBから選択する。<br />試験後スキル採点を人材DBに反映可能</span
                         >
                       </div>
-                      <div class="text-subtitle-2">{{ p.問題文章 }}</div>
-                      <v-list density="compact" lines="two" class="mt-1">
-                        <template v-if="isResultVisible">
-                          <template v-if="isCorrect(p)">
-                            <v-list-item
-                              v-for="c in p.選択肢"
-                              v-show="c.選択肢ＩＤ === p.模範回答"
-                              :key="c.選択肢ＩＤ"
-                              :title="c.選択肢文章"
-                              :subtitle="c.回答理由">
-                              <template #prepend
-                                ><v-icon color="success">mdi-check-circle</v-icon></template
-                              >
-                            </v-list-item>
-                          </template>
-                          <template v-else>
-                            <template v-for="c in p.選択肢">
+                    </template>
+                  </v-checkbox>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12" md="6"
+                  ><v-text-field
+                    v-if="form.登録済人材 === 1"
+                    :model-value="form.参加者人材ＩＤ || '-'"
+                    label="参加者人材ＩＤ"
+                    disabled
+                /></v-col>
+
+                <v-col cols="12" md="6"
+                  ><v-btn
+                    v-if="isEditableBase && form.登録済人材 === 1"
+                    color="primary"
+                    variant="tonal"
+                    prepend-icon="mdi-account-search"
+                    @click="personOpen = true"
+                    >人材選択</v-btn
+                  ></v-col
+                >
+              </v-row>
+              <v-row>
+                <!-- <v-tooltip text="コピーします"></v-tooltip>
+              <v-alert type="info" variant="tonal"
+                >試験用紙が未設定です。試験基本情報にてご設定ください。</v-alert
+              > -->
+              </v-row>
+              <v-row>
+                <v-col cols="12" md="6" class="d-flex ga-2 align-center"
+                  ><v-text-field
+                    :model-value="form.試験用紙?.試験用紙ＩＤ || '-'"
+                    label="試験用紙ＩＤ"
+                    disabled
+                /></v-col>
+
+                <v-col cols="12" md="6" class="d-flex ga-2 align-center"
+                  ><v-btn
+                    v-if="isEditableBase"
+                    color="primary"
+                    variant="tonal"
+                    prepend-icon="mdi-file-find"
+                    @click="paperOpen = true"
+                    >試験用紙選択</v-btn
+                  ></v-col
+                >
+                <v-col cols="12" md="6" class="d-flex ga-2 align-center">
+                  <v-btn
+                    v-if="isEditableBase"
+                    color="primary"
+                    prepend-icon="mdi-check-decagram"
+                    @click="onConfirmBase"
+                    >試験確定</v-btn
+                  >
+                  <v-btn
+                    v-if="form.試験リンクＩＤ"
+                    variant="tonal"
+                    prepend-icon="mdi-qrcode"
+                    @click="onQr"
+                    >試験QRコード生成</v-btn
+                  >
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-expand-transition>
+        </v-card>
+
+        <!-- 試験参加情報 -->
+        <v-card v-if="showExamLinkInfo" variant="outlined" class="mt-4">
+          <v-card-title
+            class="text-subtitle-1 d-flex align-center ga-2"
+            @click="expandExamLinkInfo = !expandExamLinkInfo"
+            ><v-icon>mdi-clipboard-text</v-icon> 試験参加情報
+          </v-card-title>
+
+          <v-expand-transition>
+            <v-card-text v-show="expandExamLinkInfo" style="max-height: none">
+              <v-row dense>
+                <v-col cols="12" md="4"
+                  ><v-text-field
+                    :model-value="form.試験リンクＩＤ || '-'"
+                    label="試験リンクＩＤ"
+                    disabled
+                /></v-col>
+                <v-col cols="12" md="8" class="d-flex justify-center">
+                  <a :href="examUrlLink">{{ examUrlLink }}</a>
+                  <v-img v-if="qrBase64" :src="qrBase64" max-width="50"
+                /></v-col>
+              </v-row>
+            </v-card-text>
+          </v-expand-transition>
+        </v-card>
+
+        <!-- 試験用紙 -->
+        <v-card variant="outlined" class="mt-4">
+          <v-card-title
+            class="text-subtitle-1 d-flex align-center ga-2"
+            @click="expandExamPaper = !expandExamPaper"
+            ><v-icon>mdi-file-document-multiple</v-icon> 試験用紙</v-card-title
+          >
+          <v-expand-transition>
+            <v-card-text v-show="expandExamPaper" style="max-height: none">
+              <template v-if="!form.試験用紙"
+                ><v-alert type="info" variant="tonal"
+                  >試験用紙が未設定です。試験基本情報にてご設定ください。</v-alert
+                ></template
+              >
+              <template v-else>
+                <div class="d-flex flex-column overflow-visible ga-3">
+                  <div
+                    v-for="(p, idx) in form.試験用紙.問題リスト"
+                    :key="p.試験用紙問題ＩＤ"
+                    class="pa-3 rounded-lg"
+                    style="border: 1px dashed #e0e0e0">
+                    <div class="d-flex align-start ga-2">
+                      <div class="text-medium-emphasis">Q{{ idx + 1 }}.</div>
+                      <div class="flex-1">
+                        <div class="d-flex align-center flex-wrap ga-2 mb-1">
+                          <v-chip
+                            size="small"
+                            color="primary"
+                            variant="tonal"
+                            prepend-icon="mdi-tag"
+                            >{{ p.スキル }}</v-chip
+                          >
+                          <v-chip
+                            size="small"
+                            color="secondary"
+                            variant="tonal"
+                            prepend-icon="mdi-stairs"
+                            >難易度 {{ p.難易度 }}</v-chip
+                          >
+                        </div>
+                        <div class="text-subtitle-2">{{ p.問題文章 }}</div>
+                        <v-list density="compact" lines="two" class="mt-1">
+                          <template v-if="isResultVisible">
+                            <template v-if="isCorrect(p)">
                               <v-list-item
-                                v-if="
-                                  c.選択肢ＩＤ === userAnswerOf(p.試験用紙問題ＩＤ) ||
-                                  c.選択肢ＩＤ === p.模範回答
-                                "
+                                v-for="c in p.選択肢"
+                                v-show="c.選択肢ＩＤ === p.模範回答"
                                 :key="c.選択肢ＩＤ"
                                 :title="c.選択肢文章"
                                 :subtitle="c.回答理由">
-                                <template #prepend>
-                                  <v-icon v-if="c.選択肢ＩＤ === p.模範回答" color="success"
-                                    >mdi-check-circle</v-icon
-                                  >
-                                  <v-icon v-else color="error">mdi-close-circle</v-icon>
-                                </template>
+                                <template #prepend
+                                  ><v-icon color="success">mdi-check-circle</v-icon></template
+                                >
                               </v-list-item>
                             </template>
-                          </template>
-                        </template>
-                        <template v-else>
-                          <v-list-item
-                            v-for="c in p.選択肢"
-                            :key="c.選択肢ＩＤ"
-                            :title="c.選択肢文章"
-                            :subtitle="c.回答理由">
-                            <template #prepend>
-                              <v-icon v-if="c.選択肢ＩＤ === p.模範回答" color="success"
-                                >mdi-check-circle</v-icon
-                              >
-                              <v-icon v-else class="text-disabled"
-                                >mdi-checkbox-blank-circle-outline</v-icon
-                              >
+                            <template v-else>
+                              <template v-for="c in p.選択肢">
+                                <v-list-item
+                                  v-if="
+                                    c.選択肢ＩＤ === userAnswerOf(p.試験用紙問題ＩＤ) ||
+                                    c.選択肢ＩＤ === p.模範回答
+                                  "
+                                  :key="c.選択肢ＩＤ"
+                                  :title="c.選択肢文章"
+                                  :subtitle="c.回答理由">
+                                  <template #prepend>
+                                    <v-icon v-if="c.選択肢ＩＤ === p.模範回答" color="success"
+                                      >mdi-check-circle</v-icon
+                                    >
+                                    <v-icon v-else color="error">mdi-close-circle</v-icon>
+                                  </template>
+                                </v-list-item>
+                              </template>
                             </template>
-                          </v-list-item>
-                        </template>
-                      </v-list>
+                          </template>
+                          <template v-else>
+                            <v-list-item
+                              v-for="c in p.選択肢"
+                              :key="c.選択肢ＩＤ"
+                              :title="c.選択肢文章"
+                              :subtitle="c.回答理由">
+                              <template #prepend>
+                                <v-icon v-if="c.選択肢ＩＤ === p.模範回答" color="success"
+                                  >mdi-check-circle</v-icon
+                                >
+                                <v-icon v-else class="text-disabled"
+                                  >mdi-checkbox-blank-circle-outline</v-icon
+                                >
+                              </template>
+                            </v-list-item>
+                          </template>
+                        </v-list>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div v-if="isResultVisible" class="mt-4">
-                <v-divider class="mb-3" />
-                <div class="text-subtitle-1 mb-2 d-flex align-center ga-2">
-                  <v-icon>mdi-chart-bar</v-icon> 試験結果集計
+                <div v-if="isResultVisible" class="mt-4">
+                  <v-divider class="mb-3" />
+                  <div class="text-subtitle-1 mb-2 d-flex align-center ga-2">
+                    <v-icon>mdi-chart-bar</v-icon> 試験結果集計
+                  </div>
+                  <v-data-table
+                    :headers="sumHeaders"
+                    :items="summaryRows"
+                    class="rounded-lg"
+                    :items-per-page="999"
+                    ><template #bottom
+                  /></v-data-table>
                 </div>
-                <v-data-table
-                  :headers="sumHeaders"
-                  :items="summaryRows"
-                  class="rounded-lg"
-                  :items-per-page="999"
-                  ><template #bottom
-                /></v-data-table>
-              </div>
-            </template>
-          </v-card-text>
+              </template>
+            </v-card-text>
+          </v-expand-transition>
+        </v-card>
+
+        <!-- 試験結果 -->
+        <v-card v-if="showExamResult" variant="outlined" class="mt-4">
+          <v-card-title class="text-subtitle-1 d-flex align-center ga-2"
+            ><v-icon>mdi-clipboard-text</v-icon> 試験実施結果
+          </v-card-title>
+          <v-card-text> </v-card-text>
         </v-card>
       </v-card-text>
 
@@ -230,7 +298,7 @@
   import type { ExamRun } from '@/types/models/ExamRun';
   import type { ExamPaper, ExamPaperProblem } from '@/types/models/ExamPaper';
   import type { Choice } from '@/types/models/Question';
-  import { EXAM_RUN_STATUS } from '@/types/codes';
+  import { EXAM_RUN_STATUS, EXAM_RUN_STATUS_COLOR } from '@/types/codes';
   import { getExamRun, saveExamRun, generateExamLink } from './api';
   import { useToast } from '@/plugins/toast';
   import ExamPaperListDialog from '@/modules/examPaper/ExamPaperListDialog.vue';
@@ -253,6 +321,10 @@
     試験用紙: undefined,
     試験問題解答: [],
   });
+  const examUrlLink = computed(
+    () => `http://localhost:5173/exam-session?examLinkId=${form.試験リンクＩＤ}`
+  );
+  const qrBase64 = ref('');
   const original = ref('');
   const saving = ref(false);
   const loading = ref(false);
@@ -262,6 +334,19 @@
   );
   const toast = useToast();
   const isEditableBase = computed(() => props.mode !== 'view' && form.試験ステータス === 0);
+  // 折りたたみフラグ
+  const expandExamInfo = ref(true); //試験基本情報
+  const expandExamLinkInfo = ref(true); //試験リンク
+  const expandExamPaper = ref(true); //試験用紙
+  const expandExamResult = ref(true); //試験結果
+  // 試験ステータステキスト
+  const examStatusStr = computed(() => EXAM_RUN_STATUS[form.試験ステータス]);
+  const examStatusColor = computed(() => EXAM_RUN_STATUS_COLOR[form.試験ステータス]);
+  // 試験参加情報表示可否の計算
+  const showExamLinkInfo = computed(() => form.試験ステータス >= 1 && form.試験ステータス <= 4);
+  // 試験結果表示可否の計算
+  const showExamResult = computed(() => form.試験ステータス >= 3 && form.試験ステータス <= 4);
+
   const canGenerateLink = computed(
     () => props.mode !== 'view' && form.試験ステータス === 0 && !!form.試験用紙 && !!form.参加者氏名
   );
@@ -367,10 +452,16 @@
   }
   async function onQr() {
     if (!form.試験リンクＩＤ) return;
-    const dataUrl = await QRCode.toDataURL(form.試験リンクＩＤ, { width: 196, margin: 1 });
-    const w = window.open('about:blank', '_blank');
-    if (w) {
-      w.document.write(`<img src="${dataUrl}" alt="QR">`);
-    }
+    const dataUrl = await QRCode.toDataURL(form.試験リンクＩＤ + Date.now(), {
+      width: 196,
+      margin: 1,
+    });
+    qrBase64.value = dataUrl;
+    console.log(form.試験リンクＩＤ + Date.now());
+    console.log('hey');
+    // const w = window.open('about:blank', '_blank');
+    // if (w) {
+    //   w.document.write(`<img src="${dataUrl}" alt="QR">`);
+    // }
   }
 </script>

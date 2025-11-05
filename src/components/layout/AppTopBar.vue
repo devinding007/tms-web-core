@@ -28,8 +28,8 @@
     <v-snackbar
       v-model="snackbarModel"
       location="top right"
-      :timeout="2000"
-      :color="toast.color"
+      :timeout="3000"
+      :color="toast.color.value"
       variant="tonal">
       {{ toast.message }}
     </v-snackbar>
