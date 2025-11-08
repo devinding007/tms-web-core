@@ -30,8 +30,9 @@
       <div class="mt-4">
         <template v-if="loading"><v-skeleton-loader type="table" /></template>
         <template v-else>
-          <v-data-table
+          <v-data-table-server
             :headers="computedHeaders"
+            :items-length="items.length"
             :items="items"
             :items-per-page="pageSize"
             :page="page"
@@ -56,7 +57,7 @@
                   size="small"
                   color="error"
                   prepend-icon="mdi-delete"
-                  :loading="deletingId === item.人材ID"
+                  :loading="deletingId === item.人材ＩＤ"
                   @click.stop="onDelete(item)"
                   >削除</v-btn
                 >
@@ -66,6 +67,13 @@
                   prepend-icon="mdi-school"
                   @click.stop="openSkill(item)"
                   >スキル</v-btn
+                >
+                <v-btn
+                  size="small"
+                  color="secondary"
+                  prepend-icon="mdi-school"
+                  @click.stop="openResumeData(item)"
+                  >経歴</v-btn
                 >
               </div>
             </template>
@@ -80,11 +88,13 @@
                 <v-pagination v-model="page" :length="pageCount" @update:modelValue="fetchList" />
               </div>
             </template>
-          </v-data-table>
+          </v-data-table-server>
         </template>
       </div>
     </v-card-text>
   </v-card>
+
+  <ResumeDetailModal v-model:open="resumeDataOpen" :personnel-id="resumeDataTargetId" />
 
   <PersonnelEditor
     v-if="mode === 'edit'"
@@ -103,6 +113,7 @@
   import { listPersonnel, deletePersonnel } from './api';
   import type { Personnel } from '@/types/models/Personnel';
   import { useToast } from '@/plugins/toast';
+  import ResumeDetailModal from '@/modules/resume/ResumeDetailModal.vue';
 
   const props = withDefaults(defineProps<{ mode?: 'edit' | 'select' }>(), { mode: 'edit' });
   const emit = defineEmits<{ (e: 'selected', v: Personnel): void }>();
@@ -137,6 +148,8 @@
   const editing = ref<Personnel | null>(null);
   const skillOpen = ref(false);
   const skillTargetId = ref<string>('');
+  const resumeDataTargetId = ref('');
+  const resumeDataOpen = ref(false);
   const errorOpen = ref(false);
   const errorMessage = ref('');
 
@@ -175,8 +188,8 @@
   async function onDelete(item: Personnel) {
     if (!confirm('削除してよろしいですか？')) return;
     try {
-      deletingId.value = item.人材ID;
-      await deletePersonnel(item.人材ID);
+      deletingId.value = item.人材ＩＤ;
+      await deletePersonnel(item.人材ＩＤ);
       toast.show('削除しました', 'success');
       fetchList();
     } catch (e) {
@@ -187,9 +200,14 @@
     }
   }
   function openSkill(item: Personnel) {
-    skillTargetId.value = item.人材ID;
+    skillTargetId.value = item.人材ＩＤ;
     skillOpen.value = true;
   }
+  function openResumeData(item: Personnel) {
+    resumeDataOpen.value = true;
+    resumeDataTargetId.value = item.人材ＩＤ;
+  }
+
   function onClickRow(_e: any, ctx: any) {
     if (props.mode === 'select' && ctx?.item) emit('selected', ctx.item as Personnel);
   }

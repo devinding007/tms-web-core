@@ -6,9 +6,9 @@ export interface ExamPaper {
   説明: string;
   作成日時: string;
   削除フラグ?: 0 | 1;
-  問題リスト: ExamPaperProblem[];
+  問題リスト: ExamPaperQuestion[];
 }
-export interface ExamPaperProblem {
+export interface ExamPaperQuestion {
   試験用紙問題ＩＤ: UUID;
   試験用紙ＩＤ: UUID;
   問題文章: string;

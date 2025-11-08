@@ -1,5 +1,5 @@
 import type { ApiListResult } from '@/types/api';
-import type { ExamPaper, ExamPaperProblem } from '@/types/models/ExamPaper';
+import type { ExamPaper, ExamPaperQuestion } from '@/types/models/ExamPaper';
 import type { Question } from '@/types/models/Question';
 import type { GenerationRequest } from '@/types/models/GenerationRequest';
 import { http } from '@/plugins/axios';
@@ -122,7 +122,7 @@ export async function aiBulkGeneratePaperProblems_fake(cond: AIGenerateCond): Pr
   return delay(list, 800);
 }
 
-export function mapQuestionToPaperProblem(question: Question, paperId: string): ExamPaperProblem {
+export function mapQuestionToPaperProblem(question: Question, paperId: string): ExamPaperQuestion {
   const uuidLocal = uuid;
   const idMap: Record<string, string> = {};
   const newChoices = question.選択肢.map((c) => {
@@ -130,7 +130,7 @@ export function mapQuestionToPaperProblem(question: Question, paperId: string): 
     idMap[c.選択肢ＩＤ as string] = nid;
     return { ...c, 選択肢ＩＤ: nid };
   });
-  const mapped: ExamPaperProblem = {
+  const mapped: ExamPaperQuestion = {
     試験用紙問題ＩＤ: uuidLocal(),
     試験用紙ＩＤ: paperId as any,
     問題文章: question.問題文章,

@@ -210,7 +210,7 @@
     buildSubmissionPayload,
     submitExamAnswers,
   } from '@/composables/useApi';
-  import type { ExamSession, ExamProblem } from '@/types/models/Exam';
+  import type { ExamSession, ExamQuestion } from '@/types/models/Exam';
 
   const route = useRoute();
   const toast = useToast();
@@ -252,7 +252,7 @@
     return examData.value.試験用紙.問題リスト.every((p) => !!answers[p.試験用紙問題ＩＤ]);
   });
 
-  function isAnswered(p: ExamProblem): boolean {
+  function isAnswered(p: ExamQuestion): boolean {
     return !!answers[p.試験用紙問題ＩＤ];
   }
 

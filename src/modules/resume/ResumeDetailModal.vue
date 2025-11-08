@@ -1,9 +1,10 @@
 <template>
   <v-dialog v-model="openSync" max-width="1200" scrollable persistent>
     <v-card>
-      <v-card-title class="d-flex align-center" :class="'bg-primary text-white'">
+      <v-card-title class="d-flex align-center ga-2" :class="'bg-primary text-white'">
         <v-icon class="mr-2">mdi-file-account</v-icon>
         経歴詳細
+        <v-chip v-if="props.personnelId">{{ props.personnelId }}</v-chip>
         <v-spacer />
         <v-btn icon variant="text" @click="close"><v-icon>mdi-close</v-icon></v-btn>
       </v-card-title>
@@ -97,8 +98,12 @@
   import { aiAnalyseResume } from '@/composables/useApi';
   import { useToast } from '@/plugins/toast';
   import type { SaveSelections } from '@/types/models/Resume';
+  import { PersonnelStoreRepo, ResumeDataStoreRepo, SkillStoreRepo } from '@/data/RepoStoreImp';
+  import { PersonnelSkillPayload } from '@/types/models/Skill';
+  import cloneDeep from 'lodash.clonedeep';
+  import { toRaw } from 'vue';
 
-  const props = defineProps<{ open: boolean; modelValue?: ResumeData; personnelId?: string }>();
+  const props = defineProps<{ open: boolean; personnelId?: string }>();
   const emit = defineEmits<{
     (e: 'update:open', v: boolean): void;
     (e: 'update:modelValue', v: ResumeData): void;
@@ -118,14 +123,22 @@
     (v) => (openSync.value = v)
   );
   watch(openSync, (v) => emit('update:open', v));
-
-  const form = ref<ResumeData | undefined>(props.modelValue);
-  watch(
-    () => props.modelValue,
-    (v) => {
-      if (v) form.value = v;
+  watch(openSync, (v) => {
+    if (v && props.personnelId) {
+      // 人材ＩＤで経歴データを検索する
+      // TODO
+      file.value = null;
+      form.value = new ResumeDataStoreRepo().findById(props.personnelId);
     }
-  );
+  });
+
+  const form = ref<ResumeData | undefined>();
+  // watch(
+  //   () => props.modelValue,
+  //   (v) => {
+  //     if (v) form.value = v;
+  //   }
+  // );
 
   const original = ref<string>(JSON.stringify(form.value));
   const saving = ref(false);
@@ -167,8 +180,49 @@
   }
 
   async function onSave(selections: SaveSelections) {
+    const personnelRepo = new PersonnelStoreRepo();
+    const resumeRepo = new ResumeDataStoreRepo();
+    const skillRepo = new SkillStoreRepo();
     saving.value = true;
     try {
+      if (props.personnelId && form.value) {
+        // debugger;
+        const person = personnelRepo.findById(props.personnelId);
+        const resumeData = cloneDeep(toRaw(form.value));
+        resumeData.人材ＩＤ = props.personnelId;
+        console.log('save started');
+        if (selections.basic) {
+          person!.名前 = form.value.氏名!;
+          personnelRepo.save(person!);
+          console.log('personnel saved');
+        }
+        if (!selections.analysis) {
+          resumeData.AI分析結果 = undefined;
+        }
+        if (selections.resume) {
+          resumeRepo.save(resumeData);
+          console.log('resume saved');
+        }
+        // AI経歴分析済の場合
+        if (form.value.AI分析結果 && form.value.AI分析結果.スキル採点) {
+          // 分析結果の反映
+          const skillData: PersonnelSkillPayload = {
+            人材ＩＤ: props.personnelId,
+            スキル: [],
+          };
+          if (selections.analysis) {
+            // AI分析結果からスキルデータに変換する
+            form.value.AI分析結果?.スキル採点.forEach((skillScore) => {
+              skillData.スキル.push({
+                スキル名: skillScore.スキル名,
+                スキル点数: skillScore.点数,
+              });
+            });
+            skillRepo.save(skillData);
+            console.log('skill saved');
+          }
+        }
+      }
       // if (!form) return;
       // Stub: pretend to save
       await new Promise((r) => setTimeout(r, 600));
@@ -176,6 +230,7 @@
       emit('saved', form.value);
       console.log(selections);
       toast.show('保存しました', 'success');
+      openSync.value = false;
     } catch (e) {
       // ui.alert('保存に失敗しました')
     } finally {

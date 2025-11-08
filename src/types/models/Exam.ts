@@ -4,7 +4,7 @@ export interface ExamChoice {
   回答理由: string;
 }
 
-export interface ExamProblem {
+export interface ExamQuestion {
   試験用紙問題ＩＤ: string;
   試験用紙ＩＤ: string;
   問題文章: string;
@@ -18,7 +18,7 @@ export interface ExamPaper {
   試験用紙名称: string;
   説明: string;
   作成日時: string;
-  問題リスト: ExamProblem[];
+  問題リスト: ExamQuestion[];
 }
 
 export interface ExamSession {

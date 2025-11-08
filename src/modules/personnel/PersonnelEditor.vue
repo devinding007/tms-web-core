@@ -10,7 +10,7 @@
           <v-col cols="12" md="6"
             ><v-text-field
               label="人材ID（自動生成・編集不可）"
-              :model-value="form.人材ID || '(新規作成時に自動生成)'"
+              :model-value="form.人材ＩＤ || '(新規作成時に自動生成)'"
               disabled
           /></v-col>
           <v-col cols="12" md="6"><v-text-field v-model="form.所属会社" label="所属会社" /></v-col>
@@ -63,10 +63,10 @@
   }>();
 
   const model = computed({ get: () => props.open, set: (v: boolean) => emit('update:open', v) });
-  const isNew = computed(() => !props.item?.人材ID);
+  const isNew = computed(() => !props.item?.人材ＩＤ);
 
   const form = reactive<Personnel>({
-    人材ID: props.item?.人材ID || '',
+    人材ＩＤ: props.item?.人材ＩＤ || '',
     所属会社: props.item?.所属会社 || '',
     名前: props.item?.名前 || '',
     社員番号: props.item?.社員番号 || '',
@@ -80,7 +80,7 @@
   watch(
     () => props.item,
     async (v) => {
-      form.人材ID = v?.人材ID || '';
+      form.人材ＩＤ = v?.人材ＩＤ || '';
       form.所属会社 = v?.所属会社 || '';
       form.名前 = v?.名前 || '';
       form.社員番号 = v?.社員番号 || '';

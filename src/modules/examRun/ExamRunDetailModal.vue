@@ -296,7 +296,7 @@
 <script setup lang="ts">
   import { ref, reactive, computed, watch, nextTick } from 'vue';
   import type { ExamRun } from '@/types/models/ExamRun';
-  import type { ExamPaper, ExamPaperProblem } from '@/types/models/ExamPaper';
+  import type { ExamPaper, ExamPaperQuestion } from '@/types/models/ExamPaper';
   import type { Choice } from '@/types/models/Question';
   import { EXAM_RUN_STATUS, EXAM_RUN_STATUS_COLOR } from '@/types/codes';
   import { getExamRun, saveExamRun, generateExamLink } from './api';

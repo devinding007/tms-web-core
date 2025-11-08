@@ -12,16 +12,29 @@
             :headers="headers"
             :items="rows"
             item-key="__rowId"
+            :items-per-page="-1"
             class="elevation-1 rounded-lg">
-            <template #item.スキル名="{ item }"
-              ><v-autocomplete
+            <template #item.スキル名="{ item }">
+              <v-combobox
+                v-model="item.スキル名"
+                :items="skillOptions"
+                density="compact"
+                hide-details
+                label=""
+                clearable />
+              <!-- 
+                variant="outlined"
+                style="min-width: 220px"
+                class="my-0"
+              <v-autocomplete
                 v-model="item.スキル名"
                 :items="skillOptions"
                 label="スキル名"
                 hide-details
                 density="comfortable"
-                :menu-props="{ maxHeight: 300 }"
-            /></template>
+                :menu-props="{ maxHeight: 300 }" 
+              /> -->
+            </template>
             <template #item.スキル点数="{ item }"
               ><v-text-field
                 v-model.number="item.スキル点数"

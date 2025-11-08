@@ -141,7 +141,7 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, watch, nextTick } from 'vue';
-  import type { ExamPaper, ExamPaperProblem } from '@/types/models/ExamPaper';
+  import type { ExamPaper, ExamPaperQuestion } from '@/types/models/ExamPaper';
   import type { Question } from '@/types/models/Question';
   import { getExamPaper, saveExamPaper, mapQuestionToPaperProblem } from './api';
   import AIGenerateModal from './AIGenerateModal.vue';
@@ -227,7 +227,7 @@
     genLoading.value = false;
   }
   function onPickQuestion(q: Question) {
-    const mapped: ExamPaperProblem = mapQuestionToPaperProblem(
+    const mapped: ExamPaperQuestion = mapQuestionToPaperProblem(
       q,
       form.試験用紙ＩＤ || ('(未採番)' as any)
     );

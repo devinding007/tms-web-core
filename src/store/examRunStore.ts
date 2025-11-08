@@ -85,22 +85,5 @@ export const useExamStore = defineStore('counter', {
     // double: (state) => state.count * 2,
   },
   actions: {},
-});
-
-export const useCounterStore = defineStore('counter', {
-  state: () => ({
-    count: 0,
-    title: 'My Counter',
-  }),
-  getters: {
-    double: (state) => state.count * 2,
-  },
-  actions: {
-    increment() {
-      this.count++;
-    },
-    reset() {
-      this.count = 0;
-    },
-  },
+  persist: true,
 });

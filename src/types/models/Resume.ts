@@ -1,6 +1,7 @@
 import { SkillSummary } from './SkillSummary';
 
 export interface ResumeData {
+  人材ＩＤ?: string;
   氏名?: string;
   出生年月?: string;
   国籍?: string;
