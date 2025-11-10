@@ -110,10 +110,10 @@
   import PersonnelEditor from './PersonnelEditor.vue';
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
   import SkillEditorModal from '@/modules/skill/SkillEditorModal.vue';
-  import { listPersonnel, deletePersonnel } from './api';
   import type { Personnel } from '@/types/models/Personnel';
   import { useToast } from '@/plugins/toast';
   import ResumeDetailModal from '@/modules/resume/ResumeDetailModal.vue';
+  import { deletePersonnel, listPersonnel } from '@/composables/useApi';
 
   const props = withDefaults(defineProps<{ mode?: 'edit' | 'select' }>(), { mode: 'edit' });
   const emit = defineEmits<{ (e: 'selected', v: Personnel): void }>();

@@ -10,8 +10,9 @@ export interface ExamRun {
   参加者人材ＩＤ?: string;
   登録済人材?: 0 | 1;
   試験ステータス: ExamRunStatus;
-  試験リンクＩＤ?: string;
+  // 試験リンクＩＤ?: string;
   試験実施日時?: string;
+  試験提出日時?: string;
   試験用紙?: ExamPaper;
   試験問題解答?: ExamAnswer[];
 }

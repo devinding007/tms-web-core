@@ -90,10 +90,10 @@
 <script setup lang="ts">
   import { ref, onMounted, computed } from 'vue';
   import SearchBar from '@/components/shared/SearchBar.vue';
-  import { listExamRuns } from './api';
   import { EXAM_RUN_STATUS, EXAM_RUN_STATUS_COLOR } from '@/types/codes';
   import ExamRunDetailModal from './ExamRunDetailModal.vue';
   import type { ExamRun } from '@/types/models/ExamRun';
+  import { listExamRuns } from '@/composables/useApi';
 
   const items = ref<ExamRun[]>([]);
   const total = ref(0);
@@ -133,6 +133,7 @@
       page.value,
       pageSize.value
     );
+    console.log(res);
     items.value = res.items;
     total.value = res.total;
     loading.value = false;

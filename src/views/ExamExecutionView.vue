@@ -22,12 +22,12 @@
             <div class="d-flex align-center ga-2">
               <v-icon color="white">mdi-clipboard-text-outline</v-icon>
               <span class="text-subtitle-1 font-weight-medium on-primary">
-                {{ examData?.試験用紙.試験用紙名称 }}
+                {{ examData?.試験用紙?.試験用紙名称 }}
               </span>
             </div>
 
             <div class="text-body-2 mt-2 on-primary">
-              {{ examData?.試験用紙.説明 }}
+              {{ examData?.試験用紙?.説明 }}
             </div>
           </div>
 
@@ -72,7 +72,7 @@
       <!-- 問題カード一覧 -->
       <div>
         <v-hover
-          v-for="(p, idx) in examData?.試験用紙.問題リスト"
+          v-for="(p, idx) in examData?.試験用紙!.問題リスト"
           :key="p.試験用紙問題ＩＤ"
           v-slot="{ isHovering, props: hoverProps }">
           <v-card
@@ -206,11 +206,12 @@
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
   import { useToast } from '@/plugins/toast';
   import {
-    fetchExamByLinkId,
     buildSubmissionPayload,
+    fetchExamSessionById,
     submitExamAnswers,
   } from '@/composables/useApi';
-  import type { ExamSession, ExamQuestion } from '@/types/models/Exam';
+  import type { ExamQuestion } from '@/types/models/Exam';
+  import { ExamRun } from '@/types/models/ExamRun';
 
   const route = useRoute();
   const toast = useToast();
@@ -223,7 +224,7 @@
   const loading = ref(true);
   const submitting = ref(false);
 
-  const examData = ref<ExamSession | null>(null);
+  const examData = ref<ExamRun | undefined>();
 
   // answers[試験用紙問題ＩＤ] = 選択肢ＩＤ
   const answers = reactive<Record<string, string>>({});
@@ -234,11 +235,14 @@
 
   // 集計系
   const totalCount = computed(() => {
-    return examData.value ? examData.value.試験用紙.問題リスト.length : 0;
+    return examData.value && examData.value.試験用紙
+      ? examData.value.試験用紙.問題リスト.length
+      : 0;
   });
 
   const answeredCount = computed(() => {
     if (!examData.value) return 0;
+    if (!examData.value.試験用紙) return 0;
     return examData.value.試験用紙.問題リスト.filter((p) => !!answers[p.試験用紙問題ＩＤ]).length;
   });
 
@@ -249,6 +253,7 @@
 
   const allAnswered = computed(() => {
     if (!examData.value) return false;
+    if (!examData.value.試験用紙) return false;
     return examData.value.試験用紙.問題リスト.every((p) => !!answers[p.試験用紙問題ＩＤ]);
   });
 
@@ -265,8 +270,7 @@
     try {
       loading.value = true;
       const linkId = String(route.query.examLinkId || '');
-      const res = await fetchExamByLinkId(linkId);
-
+      const res = await fetchExamSessionById(linkId);
       if (!res) {
         throw new Error('not found');
       }
@@ -274,9 +278,9 @@
       examData.value = res;
 
       // 初期回答（空）
-      res.試験用紙.問題リスト.forEach((p) => {
-        answers[p.試験用紙問題ＩＤ] = '';
-      });
+      // res.試験用紙.問題リスト.forEach((p) => {
+      //   answers[p.試験用紙問題ＩＤ] = '';
+      // });
     } catch (e) {
       errorMessage.value = '試験データを取得できませんでした。';
       errorOpen.value = true;

@@ -23,11 +23,7 @@
             :placeholder="isCreate ? '(フロントで採番／編集不可)' : ''" />
 
           <div class="grid md:grid-cols-2 gap-4">
-            <v-select
-              v-model="form.スキル"
-              :items="skillOptions"
-              label="スキル"
-              :disabled="isView" />
+            <v-combobox v-model="form.スキル" :items="skillOptions" label="" clearable />
             <v-text-field
               v-model.number="form.難易度"
               label="難易度 (1-10)"
@@ -35,6 +31,11 @@
               min="1"
               max="10"
               :disabled="isView" />
+            <!-- <v-select
+              v-model="form.スキル"
+              :items="skillOptions"
+              label="スキル"
+              :disabled="isView" /> -->
           </div>
 
           <v-textarea

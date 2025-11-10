@@ -17,6 +17,13 @@
             @click="expandExamInfo = !expandExamInfo"
             ><v-icon>mdi-clipboard-text</v-icon> 試験基本情報
             <v-chip :color="examStatusColor">ステータス: {{ examStatusStr }}</v-chip>
+            <v-spacer /><v-chip variant="plain"
+              ><v-icon>
+                {{
+                  !expandExamInfo ? 'mdi-plus-circle-outline' : 'mdi-minus-circle-outline'
+                }}</v-icon
+              ></v-chip
+            >
           </v-card-title>
           <v-expand-transition>
             <v-card-text v-show="expandExamInfo">
@@ -105,13 +112,6 @@
                     @click="onConfirmBase"
                     >試験確定</v-btn
                   >
-                  <v-btn
-                    v-if="form.試験リンクＩＤ"
-                    variant="tonal"
-                    prepend-icon="mdi-qrcode"
-                    @click="onQr"
-                    >試験QRコード生成</v-btn
-                  >
                 </v-col>
               </v-row>
             </v-card-text>
@@ -123,22 +123,60 @@
           <v-card-title
             class="text-subtitle-1 d-flex align-center ga-2"
             @click="expandExamLinkInfo = !expandExamLinkInfo"
-            ><v-icon>mdi-clipboard-text</v-icon> 試験参加情報
+            ><v-icon>mdi-clipboard-text</v-icon> 試験参加情報 <v-spacer /><v-chip variant="plain"
+              ><v-icon>
+                {{
+                  !expandExamLinkInfo ? 'mdi-plus-circle-outline' : 'mdi-minus-circle-outline'
+                }}</v-icon
+              ></v-chip
+            >
           </v-card-title>
 
           <v-expand-transition>
-            <v-card-text v-show="expandExamLinkInfo" style="max-height: none">
-              <v-row dense>
-                <v-col cols="12" md="4"
-                  ><v-text-field
-                    :model-value="form.試験リンクＩＤ || '-'"
-                    label="試験リンクＩＤ"
-                    disabled
-                /></v-col>
-                <v-col cols="12" md="8" class="d-flex justify-center">
-                  <a :href="examUrlLink">{{ examUrlLink }}</a>
-                  <v-img v-if="qrBase64" :src="qrBase64" max-width="50"
-                /></v-col>
+            <v-card-text v-show="expandExamLinkInfo">
+              <v-alert type="info" variant="tonal" class="mb-3"
+                >試験リンクを<strong>クリックするとコピー</strong>されます。</v-alert
+              >
+
+              <v-row align="center" dense>
+                <v-col cols="12" md="12">
+                  <div class="text-body-1 mb-2">
+                    <strong>試験ID:</strong>
+                    <span class="mono ml-2">{{ form.試験ＩＤ }}</span>
+                  </div>
+
+                  <div class="text-body-1 d-flex align-center">
+                    <strong>試験リンク:</strong>
+                    <span
+                      class="mono ml-2 clickable text-primary text-truncate"
+                      style="max-width: 100%"
+                      @click="copyLink"
+                      title="クリックでコピー">
+                      {{ examUrlLink }}
+                    </span>
+                    <v-btn
+                      class="ml-2"
+                      size="small"
+                      icon
+                      variant="text"
+                      @click="copyLink"
+                      :aria-label="'コピー'">
+                      <v-icon>mdi-content-copy</v-icon>
+                    </v-btn>
+                  </div>
+                </v-col>
+
+                <v-col cols="12" md="12" class="text-center">
+                  <v-sheet class="pa-4 rounded-lg border d-inline-block">
+                    <v-img
+                      v-if="qrBase64"
+                      :src="qrBase64"
+                      :alt="'QR for ' + examUrlLink"
+                      width="220"
+                      height="220" />
+                    <div v-else class="text-disabled">QR生成中...</div>
+                  </v-sheet>
+                </v-col>
               </v-row>
             </v-card-text>
           </v-expand-transition>
@@ -149,8 +187,17 @@
           <v-card-title
             class="text-subtitle-1 d-flex align-center ga-2"
             @click="expandExamPaper = !expandExamPaper"
-            ><v-icon>mdi-file-document-multiple</v-icon> 試験用紙</v-card-title
-          >
+            ><v-icon>mdi-file-document-multiple</v-icon> 試験用紙「{{
+              form.試験用紙?.試験用紙名称 || '—'
+            }}」 <v-spacer /><v-chip variant="plain"
+              ><v-icon>
+                {{
+                  !expandExamPaper ? 'mdi-plus-circle-outline' : 'mdi-minus-circle-outline'
+                }}</v-icon
+              ></v-chip
+            >
+          </v-card-title>
+          <v-divider></v-divider>
           <v-expand-transition>
             <v-card-text v-show="expandExamPaper" style="max-height: none">
               <template v-if="!form.試験用紙"
@@ -159,6 +206,10 @@
                 ></template
               >
               <template v-else>
+                <div class="text-caption text-medium-emphasis mb-4">
+                  <strong>説明:</strong>{{ form.試験用紙.説明 }}
+                </div>
+                <v-divider></v-divider>
                 <div class="d-flex flex-column overflow-visible ga-3">
                   <div
                     v-for="(p, idx) in form.試験用紙.問題リスト"
@@ -270,14 +321,6 @@
       <v-card-actions v-if="!isView">
         <v-spacer />
         <v-btn variant="text" @click="model = false">キャンセル</v-btn>
-        <v-btn
-          v-if="canGenerateLink"
-          color="secondary"
-          prepend-icon="mdi-link-variant"
-          :loading="linkLoading"
-          @click="onGenerateLink"
-          >試験リンク生成</v-btn
-        >
         <v-btn color="primary" prepend-icon="mdi-content-save" :loading="saving" @click="onSaveBase"
           >試験準備保存</v-btn
         >
@@ -299,11 +342,12 @@
   import type { ExamPaper, ExamPaperQuestion } from '@/types/models/ExamPaper';
   import type { Choice } from '@/types/models/Question';
   import { EXAM_RUN_STATUS, EXAM_RUN_STATUS_COLOR } from '@/types/codes';
-  import { getExamRun, saveExamRun, generateExamLink } from './api';
   import { useToast } from '@/plugins/toast';
   import ExamPaperListDialog from '@/modules/examPaper/ExamPaperListDialog.vue';
   import PersonnelSelectModal from '@/modules/personnel/PersonnelSelectModal.vue';
   import QRCode from 'qrcode';
+  import { confirmExamRun, getExamRun, saveExamRun, uuid } from '@/composables/useApi';
+  import { Personnel } from '@/types/models/Personnel';
 
   type Mode = 'view' | 'edit' | 'create';
   const props = defineProps<{ open: boolean; mode: Mode; runId?: string }>();
@@ -317,14 +361,19 @@
     登録済人材: 0,
     試験ステータス: 0,
     試験実施日時: '',
-    試験リンクＩＤ: '',
+    // 試験リンクＩＤ: '',
     試験用紙: undefined,
     試験問題解答: [],
   });
   const examUrlLink = computed(
-    () => `http://localhost:5173/exam-session?examLinkId=${form.試験リンクＩＤ}`
+    () => `http://localhost:5173/exam-session?examLinkId=${form.試験ＩＤ}`
   );
+
   const qrBase64 = ref('');
+  watch(examUrlLink, async (v) => {
+    qrBase64.value = await makeQR(v);
+  });
+
   const original = ref('');
   const saving = ref(false);
   const loading = ref(false);
@@ -397,6 +446,7 @@
           試験用紙: undefined,
           試験問題解答: [],
         });
+        form.試験ＩＤ = uuid();
       } else if (props.runId) {
         const v = await getExamRun(props.runId);
         if (v) Object.assign(form, v);
@@ -410,39 +460,28 @@
 
   const personOpen = ref(false);
 
-  function pickPerson(p: any) {
+  function pickPerson(p: Personnel) {
     form.参加者氏名 = p.名前;
-    form.参加者人材ＩＤ = p.人材ID;
+    form.参加者人材ＩＤ = p.人材ＩＤ;
     personOpen.value = false;
   }
 
   const paperOpen = ref(false);
   async function chooseFirstPaper(examPaper: ExamPaper) {
     form.試験用紙 = examPaper;
+    console.log(form.試験用紙);
     paperOpen.value = false;
   }
 
   async function onConfirmBase() {
     try {
       saving.value = true;
-      const saved = await saveExamRun(form);
+      let saved = await saveExamRun(form);
+      saved = await confirmExamRun(saved?.試験ＩＤ);
       Object.assign(form, saved);
-      toast.show('試験基本情報を保存しました', 'success');
+      toast.show('試験基本情報を確定しました', 'success');
     } finally {
       saving.value = false;
-    }
-  }
-  async function onGenerateLink() {
-    try {
-      linkLoading.value = true;
-      const saved = await saveExamRun(form);
-      Object.assign(form, saved);
-      const r = await generateExamLink(form.試験ＩＤ);
-      form.試験リンクＩＤ = r.linkId;
-      form.試験ステータス = r.status;
-      toast.show('試験リンクを生成しました', 'success');
-    } finally {
-      linkLoading.value = false;
     }
   }
   async function onSaveBase() {
@@ -450,18 +489,26 @@
     emit('saved');
     model.value = false;
   }
-  async function onQr() {
-    if (!form.試験リンクＩＤ) return;
-    const dataUrl = await QRCode.toDataURL(form.試験リンクＩＤ + Date.now(), {
-      width: 196,
-      margin: 1,
-    });
-    qrBase64.value = dataUrl;
-    console.log(form.試験リンクＩＤ + Date.now());
-    console.log('hey');
-    // const w = window.open('about:blank', '_blank');
-    // if (w) {
-    //   w.document.write(`<img src="${dataUrl}" alt="QR">`);
-    // }
+
+  async function makeQR(text: string) {
+    try {
+      return await QRCode.toDataURL(text, {
+        width: 1024,
+        margin: 1,
+        errorCorrectionLevel: 'M',
+        color: { dark: '#000000', light: '#FFFFFF' },
+      });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(examUrlLink.value);
+      toast.show('リンクをコピーしました', 'success');
+    } catch (e) {
+      toast.show('リンクコピーに失敗しました', 'error');
+    }
   }
 </script>

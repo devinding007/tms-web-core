@@ -12,13 +12,14 @@
 <script setup lang="ts">
   import { computed } from 'vue';
   import PersonnelListView from './PersonnelListView.vue';
+  import { Personnel } from '@/types/models/Personnel';
   const props = defineProps<{ open: boolean }>();
   const emit = defineEmits<{
     (e: 'update:open', v: boolean): void;
-    (e: 'selected', v: any): void;
+    (e: 'selected', v: Personnel): void;
   }>();
   const model = computed({ get: () => props.open, set: (v: boolean) => emit('update:open', v) });
-  function onSelected(v: any) {
+  function onSelected(v: Personnel) {
     emit('selected', v);
     model.value = false;
   }

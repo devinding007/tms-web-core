@@ -97,9 +97,9 @@
   import SearchBar from '@/components/shared/SearchBar.vue';
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
   import ExamPaperDetailModal from './ExamPaperDetailModal.vue';
-  import { listExamPapers, deleteExamPaper } from './api';
   import type { ExamPaper } from '@/types/models/ExamPaper';
   import { useToast } from '@/plugins/toast';
+  import { deleteExamPaper, listExamPapers } from '@/composables/useApi';
 
   const props = withDefaults(defineProps<{ mode?: 'edit' | 'select' }>(), { mode: 'edit' });
   const emit = defineEmits<{ (e: 'selected', v: ExamPaper): void }>();
@@ -108,7 +108,7 @@
   const keyword = ref('');
   const filterName = ref('');
   const filterDesc = ref('');
-  const items = ref<ExamPaper[]>([]);
+  const items = ref<ExamPaper[] | undefined>([]);
   const total = ref(0);
   const page = ref(1);
   const pageSize = ref(10);

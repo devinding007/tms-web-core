@@ -52,9 +52,9 @@
 <script setup lang="ts">
   import { computed, reactive, watch, ref, nextTick } from 'vue';
   import type { Personnel } from '@/types/models/Personnel';
-  import { createPersonnel, updatePersonnel } from './api';
   import { useToast } from '@/plugins/toast';
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
+  import { createPersonnel, updatePersonnel } from '@/composables/useApi';
 
   const props = defineProps<{ open: boolean; item?: Personnel | null }>();
   const emit = defineEmits<{

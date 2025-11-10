@@ -177,6 +177,8 @@
       );
       items.value = res.items;
       total.value = res.total;
+      // items.value = [];
+      // total.value = 0;
     } catch (e) {
       errorMessage.value = '検索に失敗しました';
       errorOpen.value = true;

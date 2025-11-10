@@ -8,6 +8,10 @@ import { useResumeDataStore } from '@/store/useResumeStore';
 import { useSkillStore } from '@/store/useSkillStore';
 import { ResumeData } from '@/types/models/Resume';
 import { PersonnelSkillPayload } from '@/types/models/Skill';
+import { ExamPaper } from '@/types/models/ExamPaper';
+import { useExamPaperStore } from '@/store/examPaperStore';
+import { ExamRun } from '@/types/models/ExamRun';
+import { useExamRunStore } from '@/store/examRunStore';
 
 // Storeを利用する人材管理リポ
 export class PersonnelStoreRepo implements Repo<Personnel> {
@@ -159,3 +163,140 @@ export class SkillStoreRepo implements Repo<PersonnelSkillPayload> {
     if (i >= 0) this.store.items.splice(i, 1);
   }
 }
+
+// Storeを利用する試験用紙管理repo
+export class ExamPaperStoreRepo implements Repo<ExamPaper> {
+  private store: ReturnType<typeof useExamPaperStore>;
+  constructor(store = useExamPaperStore()) {
+    this.store = store;
+  }
+
+  list(p: Pagination): PageResult<ExamPaper> {
+    const { page, size } = p;
+
+    // フィルタ
+    let arr = this.store.items;
+
+    // ページング（1始まり）
+    const start = Math.max(0, (page - 1) * size);
+
+    return {
+      items: this.store.items.slice(start, start + p.size),
+      total: this.store.items.length,
+    };
+  }
+
+  findById(id: string): ExamPaper | undefined {
+    const hit = this.store.items.find((v) => v.試験用紙ＩＤ === id);
+    // if (!hit) throw new Error(`問題ＩＤ [${id}] が見つかりません`);
+    return hit;
+  }
+
+  save(examPaper: ExamPaper): void {
+    // 既存なら更新日時だけ更新
+    const i = this.store.items.findIndex((v) => v.試験用紙ＩＤ === examPaper.試験用紙ＩＤ);
+    if (i >= 0) {
+      this.store.items.splice(i, 1, { ...examPaper });
+    } else {
+      this.store.items.push({
+        ...examPaper,
+      });
+    }
+  }
+
+  remove(id: string): void {
+    const i = this.store.items.findIndex((v) => v.試験用紙ＩＤ === id);
+    if (i >= 0) this.store.items.splice(i, 1);
+  }
+}
+
+// Storeを利用する試験実施管理repo
+export class ExamRunStoreRepo implements Repo<ExamRun> {
+  private store: ReturnType<typeof useExamRunStore>;
+  constructor(store = useExamRunStore()) {
+    this.store = store;
+  }
+
+  list(p: Pagination): PageResult<ExamRun> {
+    const { page, size } = p;
+
+    // フィルタ
+    let arr = this.store.items;
+
+    // ページング（1始まり）
+    const start = Math.max(0, (page - 1) * size);
+
+    return {
+      items: this.store.items.slice(start, start + p.size),
+      total: this.store.items.length,
+    };
+  }
+
+  findById(id: string): ExamRun | undefined {
+    const hit = this.store.items.find((v) => v.試験ＩＤ === id);
+    // if (!hit) throw new Error(`問題ＩＤ [${id}] が見つかりません`);
+    return hit;
+  }
+
+  save(examPaper: ExamRun): void {
+    // 既存なら更新日時だけ更新
+    const i = this.store.items.findIndex((v) => v.試験ＩＤ === examPaper.試験ＩＤ);
+    if (i >= 0) {
+      this.store.items.splice(i, 1, { ...examPaper });
+    } else {
+      this.store.items.push({
+        ...examPaper,
+      });
+    }
+  }
+
+  remove(id: string): void {
+    const i = this.store.items.findIndex((v) => v.試験ＩＤ === id);
+    if (i >= 0) this.store.items.splice(i, 1);
+  }
+}
+
+// export class ExamPaperStoreRepo implements Repo<ExamPaper> {
+//   private store: ReturnType<typeof useExamPaperStore>;
+//   constructor(store = useExamPaperStore()) {
+//     this.store = store;
+//   }
+
+//   list(p: Pagination): PageResult<ExamPaper> {
+//     const { page, size } = p;
+
+//     // フィルタ
+//     let arr = this.store.items;
+
+//     // ページング（1始まり）
+//     const start = Math.max(0, (page - 1) * size);
+
+//     return {
+//       items: this.store.items.slice(start, start + p.size),
+//       total: this.store.items.length,
+//     };
+//   }
+
+//   findById(id: string): ExamPaper | undefined {
+//     const hit = this.store.items.find((v) => v.試験用紙ＩＤ === id);
+//     // if (!hit) throw new Error(`問題ＩＤ [${id}] が見つかりません`);
+//     return hit;
+//   }
+
+//   save(examPaper: ExamPaper): void {
+//     // 既存なら更新日時だけ更新
+//     const i = this.store.items.findIndex((v) => v.試験用紙ＩＤ === examPaper.試験用紙ＩＤ);
+//     if (i >= 0) {
+//       this.store.items.splice(i, 1, { ...examPaper });
+//     } else {
+//       this.store.items.push({
+//         ...examPaper,
+//       });
+//     }
+//   }
+
+//   remove(id: string): void {
+//     const i = this.store.items.findIndex((v) => v.試験用紙ＩＤ === id);
+//     if (i >= 0) this.store.items.splice(i, 1);
+//   }
+// }

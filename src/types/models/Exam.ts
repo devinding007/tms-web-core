@@ -13,7 +13,7 @@ export interface ExamQuestion {
   選択肢: ExamChoice[];
 }
 
-export interface ExamPaper {
+export interface ExamExecutionPaper {
   試験用紙ＩＤ: string;
   試験用紙名称: string;
   説明: string;
@@ -27,7 +27,7 @@ export interface ExamSession {
   参加者人材ＩＤ: string;
   試験ステータス: number;
   試験リンクＩＤ: string;
-  試験用紙: ExamPaper;
+  試験用紙: ExamExecutionPaper;
 }
 
 export interface ExamAnswerItem {

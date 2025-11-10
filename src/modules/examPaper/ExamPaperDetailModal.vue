@@ -143,11 +143,12 @@
   import { computed, reactive, ref, watch, nextTick } from 'vue';
   import type { ExamPaper, ExamPaperQuestion } from '@/types/models/ExamPaper';
   import type { Question } from '@/types/models/Question';
-  import { getExamPaper, saveExamPaper, mapQuestionToPaperProblem } from './api';
+  import { mapQuestionToPaperProblem } from './api';
   import AIGenerateModal from './AIGenerateModal.vue';
   import QuestionListDialog from '@/modules/exam/QuestionListDialog.vue';
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
   import { useToast } from '@/plugins/toast';
+  import { getExamPaper, saveExamPaper, uuid } from '@/composables/useApi';
 
   type Mode = 'view' | 'edit' | 'create';
   const props = defineProps<{ open: boolean; mode: Mode; paperId?: string }>();
@@ -188,6 +189,7 @@
       loading.value = true;
       if (isCreate.value) {
         Object.assign(form, empty());
+        form.試験用紙ＩＤ = uuid();
       } else {
         const p = await getExamPaper(props.paperId!);
         if (p) Object.assign(form, JSON.parse(JSON.stringify(p)));
