@@ -5,8 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:it": "vite --mode it",
+    "dev:production": "vite --mode production",
     "build": "vite build",
+    "build:it": "vite build --mode it",
+    "build:production": "vite build --mode production",
     "preview": "vite preview",
+    "preview:it": "vite preview --mode it",
+    "preview:production": "vite preview --mode production",
     "test": "vitest --environment jsdom"
   },
   "dependencies": {

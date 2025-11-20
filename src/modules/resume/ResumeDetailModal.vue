@@ -1,11 +1,21 @@
 <template>
-  <v-dialog v-model="openSync" max-width="1200" scrollable persistent>
+  <v-dialog
+    v-model="openSync"
+    :max-width="isFullscreen ? undefined : 1200"
+    :fullscreen="isFullscreen"
+    scrollable
+    persistent>
     <v-card>
       <v-card-title class="d-flex align-center ga-2" :class="'bg-primary text-white'">
         <v-icon class="mr-2">mdi-file-account</v-icon>
         経歴詳細
         <v-chip v-if="props.personnelId">{{ props.personnelId }}</v-chip>
         <v-spacer />
+        <v-btn icon variant="text" @click="isFullscreen = !isFullscreen">
+          <v-icon>
+            {{ isFullscreen ? 'mdi-window-restore' : 'mdi-window-maximize' }}
+          </v-icon>
+        </v-btn>
         <v-btn icon variant="text" @click="close"><v-icon>mdi-close</v-icon></v-btn>
       </v-card-title>
 
@@ -103,6 +113,7 @@
   import cloneDeep from 'lodash.clonedeep';
   import { toRaw } from 'vue';
 
+  const isFullscreen = ref(false);
   const props = defineProps<{ open: boolean; personnelId?: string }>();
   const emit = defineEmits<{
     (e: 'update:open', v: boolean): void;

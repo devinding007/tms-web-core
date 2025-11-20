@@ -40,10 +40,10 @@ out/
 
 # --- Env files ---
 # 実機密はコミットしない。サンプルは .env.example を用意
-.env
-.env.*
-!.env.example
-!.env*.example
+# .env
+# .env.*
+# !.env.example
+# !.env*.example
 
 # （必要に応じて）トークン等が入る場合は .npmrc を除外
 # .npmrc

@@ -1,10 +1,22 @@
 <template>
-  <v-dialog v-model="model" max-width="980" :scrim="true" close-on-esc close-on-back>
+  <v-dialog
+    v-model="model"
+    :max-width="isFullscreen ? undefined : 1200"
+    :fullscreen="isFullscreen"
+    :scrim="true"
+    close-on-esc
+    close-on-back>
     <v-card class="fixed-dialog">
       <!-- 上部：タイトル＋閉じるのみ（ボタンは下部に集約） -->
       <v-toolbar density="comfortable" color="primary" class="text-white">
         <v-toolbar-title>問題詳細（{{ titleByMode }}）</v-toolbar-title>
         <v-spacer />
+        <v-btn icon variant="text" @click="isFullscreen = !isFullscreen">
+          <v-icon>
+            {{ isFullscreen ? 'mdi-window-restore' : 'mdi-window-maximize' }}
+          </v-icon>
+        </v-btn>
+
         <v-btn icon @click="model = false" title="閉じる"><v-icon>mdi-close</v-icon></v-btn>
       </v-toolbar>
 
@@ -173,6 +185,7 @@
   } from '@/composables/useApi';
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
   import { useToast } from '@/plugins/toast';
+  const isFullscreen = ref(false);
 
   type Mode = 'view' | 'edit' | 'create';
   const props = defineProps<{ open: boolean; mode: Mode; questionId?: string }>();

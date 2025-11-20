@@ -24,16 +24,6 @@
           auto-grow
           hint="案件概要・求めるスキル・条件・期間などを自由に記載してください"
           persistent-hint />
-        <div class="d-flex justify-end mt-4">
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-content-save"
-            :disabled="!canSave"
-            :loading="saving"
-            @click="onSave">
-            保存
-          </v-btn>
-        </div>
       </v-card-text>
     </v-card>
 
@@ -55,7 +45,7 @@
           <v-data-table
             :headers="candidateHeaders"
             :items="candidates"
-            item-key="人材ID"
+            item-key="人材ＩＤ"
             class="elevation-1 rounded-lg">
             <template #item.BPフラグ="{ item }">
               <v-chip size="small" :color="item.BPフラグ === 0 ? 'primary' : 'secondary'">
@@ -119,8 +109,10 @@
       </v-card-text>
     </v-card>
 
+    <!-- モーダルなど -->
     <PersonnelMultiSelectModal v-model:open="selectModalOpen" @selected="onSelectedCandidates" />
     <ErrorDialog v-model:open="errorOpen" :message="errorMessage" />
+
     <v-overlay :model-value="analyzing || saving" class="align-center justify-center" persistent>
       <v-progress-circular indeterminate size="64" />
     </v-overlay>
@@ -134,12 +126,13 @@
   import type { Personnel } from '@/types/models/Personnel';
   import type { CandidateAnalysis } from '@/composables/useApi';
   import { useToast } from '@/plugins/toast';
-  import { Proposal } from '@/types/models/Proposal';
+  import type { Proposal } from '@/types/models/Proposal';
 
   const toast = useToast();
 
   const props = defineProps<{
     proposal?: Proposal | null;
+    saving?: boolean;
   }>();
 
   const emit = defineEmits<{
@@ -158,9 +151,11 @@
 
   const selectModalOpen = ref(false);
   const analyzing = ref(false);
-  const saving = ref(false);
   const errorOpen = ref(false);
   const errorMessage = ref('');
+
+  // 親から渡される保存中フラグ
+  const saving = computed(() => props.saving ?? false);
 
   const candidateHeaders = [
     { title: '所属会社', key: '所属会社' },
@@ -210,6 +205,7 @@
     );
   });
 
+  // props.proposal 変更時にフォームへ反映
   watch(
     () => props.proposal,
     (p) => {
@@ -301,24 +297,20 @@
   }
 
   function onSave() {
-    if (!canSave.value) {
-      return;
-    }
-    try {
-      saving.value = true;
-      const payload: Proposal = {
-        提案ID: proposalId.value,
-        提案名: proposalName.value.trim(),
-        募集要項: jobDescription.value.trim(),
-      };
-      emit('save', payload);
-      originalProposal.value = { ...payload };
-      toast.show('提案を保存しました', 'success');
-    } catch (e) {
-      errorMessage.value = '提案の保存に失敗しました';
-      errorOpen.value = true;
-    } finally {
-      saving.value = false;
-    }
+    if (!canSave.value) return;
+    const payload: Proposal = {
+      提案ID: proposalId.value,
+      提案名: proposalName.value.trim(),
+      募集要項: jobDescription.value.trim(),
+    };
+    emit('save', payload);
+    // 画面を閉じずに連続編集するケースに備えて、自分の中の "基準" も更新しておく
+    originalProposal.value = { ...payload };
   }
+
+  // canSave と onSave を親から使えるようにする
+  defineExpose({
+    canSave,
+    onSave,
+  });
 </script>

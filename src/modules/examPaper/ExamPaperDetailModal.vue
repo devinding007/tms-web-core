@@ -2,8 +2,8 @@
   <v-dialog
     v-model="model"
     :max-width="isFullscreen ? undefined : 980"
-    :scrim="true"
     :fullscreen="isFullscreen"
+    :scrim="true"
     close-on-esc
     close-on-back>
     <v-card class="fixed-dialog d-flex flex-column h-100">

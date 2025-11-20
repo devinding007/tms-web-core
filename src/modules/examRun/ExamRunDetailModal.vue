@@ -1,9 +1,21 @@
 <template>
-  <v-dialog v-model="model" max-width="1024" :scrim="true" close-on-esc close-on-back>
+  <v-dialog
+    v-model="model"
+    :max-width="isFullscreen ? undefined : 1200"
+    :fullscreen="isFullscreen"
+    :scrim="true"
+    close-on-esc
+    close-on-back>
     <v-card class="fixed-dialog">
       <v-toolbar density="comfortable" color="primary" class="text-white">
         <v-toolbar-title>試験実施詳細（{{ titleByMode }}）</v-toolbar-title>
-        <v-spacer /><v-btn icon @click="model = false"><v-icon>mdi-close</v-icon></v-btn>
+        <v-spacer />
+        <v-btn icon variant="text" @click="isFullscreen = !isFullscreen">
+          <v-icon>
+            {{ isFullscreen ? 'mdi-window-restore' : 'mdi-window-maximize' }}
+          </v-icon>
+        </v-btn>
+        <v-btn icon @click="model = false"><v-icon>mdi-close</v-icon></v-btn>
       </v-toolbar>
 
       <template v-if="loading"
@@ -359,6 +371,8 @@
   import { Personnel } from '@/types/models/Personnel';
 
   type Mode = 'view' | 'edit' | 'create';
+  const isFullscreen = ref(false);
+
   const props = defineProps<{ open: boolean; mode: Mode; runId?: string }>();
   const emit = defineEmits<{ (e: 'update:open', v: boolean): void; (e: 'saved'): void }>();
   const model = computed({ get: () => props.open, set: (v: boolean) => emit('update:open', v) });
@@ -374,7 +388,8 @@
     試験問題解答: [],
   });
   const examUrlLink = computed(
-    () => `http://localhost:5173/exam-session?examLinkId=${form.試験ＩＤ}`
+    // () => `http://localhost:5173/exam-session?examLinkId=${form.試験ＩＤ}`
+    () => `${import.meta.env.VITE_API_HOME_URL}exam-session?examLinkId=${form.試験ＩＤ}`
   );
 
   const qrBase64 = ref('');
