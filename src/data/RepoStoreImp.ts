@@ -117,9 +117,6 @@ export class ResumeDataStoreRepo implements Repo<ResumeData> {
 
   findById(id: string): ResumeData | undefined {
     const ret: ResumeData | undefined = this.store.items.find((v) => v.人材ＩＤ === id);
-    // if (ret == null) {
-    //   throw new Error(`人材ＩＤ[${id}]が見つかりません`);
-    // }
     return ret;
   }
   save(resumeData: ResumeData): void {

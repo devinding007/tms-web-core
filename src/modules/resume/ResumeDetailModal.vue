@@ -20,7 +20,7 @@
       </v-card-title>
 
       <v-card-text>
-        <v-row dense>
+        <v-row dense v-if="mode == 'edit'">
           <v-col cols="12" md="8">
             <v-file-input
               v-model="file"
@@ -31,8 +31,11 @@
           </v-col>
         </v-row>
 
-        <v-alert v-if="!form" type="info" variant="plain"
+        <v-alert v-if="!form && mode == 'edit'" type="info" variant="plain"
           >「エクセル選択」をクリックして経歴書をアップロードしてください。経歴データ取り込み後、「AI経歴分析」ボタンを押下してください。</v-alert
+        >
+        <v-alert v-if="!form && mode == 'view'" type="info" variant="plain"
+          >経歴データが登録されていません。人材管理画面にて登録を行ってください。</v-alert
         >
 
         <!-- === 外枠: AI分析結果 === -->
@@ -74,6 +77,7 @@
       <v-card-actions class="justify-end">
         <v-btn variant="text" prepend-icon="mdi-close" @click="close">キャンセル</v-btn>
         <v-btn
+          v-if="props.mode === 'edit'"
           variant="text"
           color="primary"
           :disabled="!dirty"
@@ -83,6 +87,7 @@
           >AI経歴分析</v-btn
         >
         <v-btn
+          v-if="props.mode === 'edit'"
           color="primary"
           prepend-icon="mdi-content-save"
           :disabled="!dirty"
@@ -114,7 +119,12 @@
   import { toRaw } from 'vue';
 
   const isFullscreen = ref(false);
-  const props = defineProps<{ open: boolean; personnelId?: string }>();
+  const props = withDefaults(
+    defineProps<{ open: boolean; personnelId?: string; mode?: 'edit' | 'view' }>(),
+    {
+      mode: 'edit',
+    }
+  );
   const emit = defineEmits<{
     (e: 'update:open', v: boolean): void;
     (e: 'update:modelValue', v: ResumeData): void;

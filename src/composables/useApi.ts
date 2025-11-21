@@ -1,7 +1,7 @@
 import type { ApiListResult } from '@/types/api';
 import type { Personnel } from '@/types/models/Personnel';
 import type { Question } from '@/types/models/Question';
-import type { PersonnelSkillPayload, SkillItem } from '@/types/models/Skill';
+import type { PersonnelSkillPayload, SkillItem, SkillUpdate } from '@/types/models/Skill';
 import type { ExamPaper } from '@/types/models/ExamPaper';
 
 import { ResumeData } from '@/types/models/Resume';
@@ -389,6 +389,74 @@ export function utcToJst(
     default:
       return base; // 'YYYY-MM-DD HH:mm:ss'
   }
+}
+
+/**
+ * スキルポイント計算
+ * @param oldPoint 古いスキル点数
+ * @param level 問題難易度 1-10
+ * @param isRightAnswer 正解不正解区分
+ */
+export function calcNewSkillPoint(oldPoint: number, level: number, isRightAnswer: boolean): number {
+  let alpha = oldPoint;
+  let beta = 100 - oldPoint;
+  const infoAmount = level;
+  if (isRightAnswer) {
+    alpha += infoAmount;
+  } else beta += 11 - infoAmount;
+  return Math.ceil((alpha / (alpha + beta)) * 100);
+}
+
+// 試験結果からスキル結果を反映する
+export async function reflectSkillPoint(examId: string): Promise<SkillUpdate[]> {
+  const repo: ExamRunStoreRepo = new ExamRunStoreRepo();
+  const skillRepo: SkillStoreRepo = new SkillStoreRepo();
+  const examRun = repo.findById(examId);
+  if (!examRun || !examRun.試験問題解答) throw new Error('試験実施情報が存在しません。');
+  if (!examRun.参加者人材ＩＤ) throw new Error('参加者が登録されておりません');
+  const answerMap = new Map<string, string>();
+  examRun.試験問題解答.forEach((ans) => {
+    answerMap.set(ans.試験用紙問題ＩＤ, ans.回答試験用紙選択肢ＩＤ);
+  });
+  const skillDto = skillRepo.findById(examRun.参加者人材ＩＤ);
+  const skillMap = new Map<string, number>();
+  skillDto?.スキル.forEach((skill) => {
+    skillMap.set(skill.スキル名, skill.スキル点数);
+  });
+  if (!skillDto) throw new Error('参加者が登録されておりません');
+  const skillMapBefore = cloneDeep(skillMap);
+  examRun.試験用紙?.問題リスト.forEach((question) => {
+    const skillPoint = skillMap.get(question.スキル) ?? 0;
+    let newPoint = skillPoint;
+    if (question.模範回答 === answerMap.get(question.試験用紙問題ＩＤ)) {
+      newPoint = calcNewSkillPoint(skillPoint, question.難易度, true);
+    } else {
+      newPoint = calcNewSkillPoint(skillPoint, question.難易度, false);
+    }
+    skillMap.set(question.スキル, newPoint);
+  });
+  const updateRes: SkillUpdate[] = [];
+  skillMap.forEach((val, key) => {
+    const scoreBefore = skillMapBefore.get(key);
+    if (scoreBefore != val) {
+      updateRes.push({
+        スキル名: key,
+        スキル点数更新前: scoreBefore ?? 0,
+        スキル点数更新後: val,
+      });
+    }
+  });
+  skillDto.スキル = [];
+  skillMap.forEach((val, key) => {
+    skillDto.スキル.push({
+      スキル名: key,
+      スキル点数: val,
+    });
+  });
+  skillRepo.save(skillDto);
+  examRun.スキル反映結果 = updateRes;
+  examRun.試験ステータス = 4; // 結果反映済
+  return updateRes;
 }
 
 export interface CandidateAnalysis {

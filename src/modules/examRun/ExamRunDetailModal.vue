@@ -324,9 +324,18 @@
         </v-card>
 
         <!-- 試験結果 -->
-        <v-card v-if="showExamResult" variant="outlined" class="mt-4">
-          <v-card-title class="text-subtitle-1 d-flex align-center ga-2"
-            ><v-icon>mdi-clipboard-text</v-icon> 試験実施結果
+        <v-card v-if="showReflectResult" variant="outlined" class="mt-4">
+          <v-card-title>
+            <div class="text-subtitle-1 mb-2 d-flex align-center ga-2">
+              <v-icon>mdi-clipboard-text</v-icon> スキル反映結果
+            </div>
+            <v-data-table
+              :headers="skillReflectionHeaders"
+              :items="form.スキル反映結果"
+              class="rounded-lg"
+              :items-per-page="999"
+              ><template #bottom
+            /></v-data-table>
           </v-card-title>
           <v-card-text> </v-card-text>
         </v-card>
@@ -344,6 +353,14 @@
           prepend-icon="mdi-check-decagram"
           @click="onConfirmBase"
           >試験確定</v-btn
+        >
+        <v-btn
+          v-if="showReflectBtn"
+          color="primary"
+          prepend-icon="mdi-school"
+          :loading="reflecting"
+          @click="onReflectResult"
+          >スキル反映</v-btn
         >
       </v-card-actions>
 
@@ -367,7 +384,13 @@
   import ExamPaperListDialog from '@/modules/examPaper/ExamPaperListDialog.vue';
   import PersonnelSelectModal from '@/modules/personnel/PersonnelSelectModal.vue';
   import QRCode from 'qrcode';
-  import { confirmExamRun, getExamRun, saveExamRun, uuid } from '@/composables/useApi';
+  import {
+    confirmExamRun,
+    getExamRun,
+    reflectSkillPoint,
+    saveExamRun,
+    uuid,
+  } from '@/composables/useApi';
   import { Personnel } from '@/types/models/Personnel';
 
   type Mode = 'view' | 'edit' | 'create';
@@ -400,12 +423,20 @@
   const original = ref('');
   const saving = ref(false);
   const loading = ref(false);
+  const reflecting = ref(false);
   const linkLoading = ref(false);
   const titleByMode = computed(() =>
     props.mode === 'create' ? '新規' : props.mode === 'edit' ? '編集' : '参照'
   );
   const toast = useToast();
   const isEditableBase = computed(() => props.mode !== 'view' && form.試験ステータス === 0);
+  // スキル反映ボタン表示
+  const showReflectBtn = computed(
+    () => props.mode !== 'view' && form.試験ステータス === 3 && form.登録済人材 === 1
+  );
+  // スキル反映結果表示
+  const showReflectResult = computed(() => form.試験ステータス === 4); // 結果反映済み
+
   // 折りたたみフラグ
   const expandExamInfo = ref(true); //試験基本情報
   const expandExamLinkInfo = ref(true); //試験リンク
@@ -430,6 +461,11 @@
     const a = userAnswerOf(p.試験用紙問題ＩＤ);
     return a && a === p.模範回答;
   }
+  const skillReflectionHeaders = [
+    { title: 'スキル', key: 'スキル名', width: 180 },
+    { title: '調整前', key: 'スキル点数更新前', width: 100 },
+    { title: '調整後', key: 'スキル点数更新後', width: 100 },
+  ];
   const sumHeaders = [
     { title: 'スキル', key: 'スキル', width: 180 },
     { title: '出題数', key: 'total', width: 100 },
@@ -533,5 +569,13 @@
     } catch (e) {
       toast.show('リンクコピーに失敗しました', 'error');
     }
+  }
+
+  async function onReflectResult() {
+    reflecting.value = true;
+    await reflectSkillPoint(form.試験ＩＤ);
+    toast.show('スキルデータの人材DB反映が完了しました', 'success');
+    await load();
+    reflecting.value = false;
   }
 </script>

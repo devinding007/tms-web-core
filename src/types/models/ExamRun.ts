@@ -1,5 +1,6 @@
 import type { ExamPaper } from './ExamPaper';
 import type { ExamRunStatus } from '../codes';
+import { SkillUpdate } from './Skill';
 export interface ExamAnswer {
   試験用紙問題ＩＤ: string;
   回答試験用紙選択肢ＩＤ: string;
@@ -16,4 +17,5 @@ export interface ExamRun {
   試験用紙?: ExamPaper;
   試験正解数?: number;
   試験問題解答?: ExamAnswer[];
+  スキル反映結果?: SkillUpdate[];
 }

@@ -21,19 +21,8 @@
                 density="compact"
                 hide-details
                 label=""
+                :disabled="props.mode == 'view'"
                 clearable />
-              <!-- 
-                variant="outlined"
-                style="min-width: 220px"
-                class="my-0"
-              <v-autocomplete
-                v-model="item.スキル名"
-                :items="skillOptions"
-                label="スキル名"
-                hide-details
-                density="comfortable"
-                :menu-props="{ maxHeight: 300 }" 
-              /> -->
             </template>
             <template #item.スキル点数="{ item }"
               ><v-text-field
@@ -43,16 +32,28 @@
                 max="100"
                 density="comfortable"
                 hide-details
+                :disabled="props.mode == 'view'"
                 style="max-width: 120px"
             /></template>
             <template #item.actions="{ item }"
-              ><v-btn icon size="small" color="error" @click="removeRow(item)"
+              ><v-btn
+                v-if="props.mode == 'edit'"
+                icon
+                size="small"
+                color="error"
+                @click="removeRow(item)"
                 ><v-icon>mdi-delete</v-icon></v-btn
               ></template
             >
             <template #bottom
               ><div class="d-flex justify-space-between pa-2">
-                <v-btn variant="tonal" prepend-icon="mdi-plus" @click="addRow">スキル追加</v-btn>
+                <v-btn
+                  v-if="props.mode == 'edit'"
+                  variant="tonal"
+                  prepend-icon="mdi-plus"
+                  @click="addRow"
+                  >スキル追加</v-btn
+                >
                 <div /></div
             ></template>
           </v-data-table>
@@ -61,6 +62,7 @@
       <v-card-actions
         ><v-spacer /><v-btn variant="text" @click="model = false">閉じる</v-btn
         ><v-btn
+          v-if="props.mode == 'edit'"
           color="primary"
           :loading="saving"
           :disabled="!dirty"
@@ -81,7 +83,17 @@
   import { useToast } from '@/plugins/toast';
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
 
-  const props = defineProps<{ open: boolean; personnelId: string }>();
+  // 引数のデフォルト値定義方法
+  const props = withDefaults(
+    defineProps<{
+      open: boolean;
+      personnelId: string;
+      mode?: 'edit' | 'view';
+    }>(),
+    {
+      mode: () => 'edit',
+    }
+  );
   const emit = defineEmits<{ (e: 'update:open', v: boolean): void }>();
   const model = computed({ get: () => props.open, set: (v: boolean) => emit('update:open', v) });
 

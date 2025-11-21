@@ -56,6 +56,20 @@
               <div class="d-flex ga-2">
                 <v-btn
                   size="small"
+                  color="secondary"
+                  prepend-icon="mdi-school"
+                  @click.stop="onOpenSkill(item.人材ＩＤ)">
+                  スキル
+                </v-btn>
+                <v-btn
+                  size="small"
+                  color="secondary"
+                  prepend-icon="mdi-school"
+                  @click.stop="onOpenResume(item.人材ＩＤ)">
+                  経歴
+                </v-btn>
+                <v-btn
+                  size="small"
                   color="error"
                   prepend-icon="mdi-delete"
                   @click.stop="removeCandidate(item.人材ＩＤ)">
@@ -111,6 +125,11 @@
 
     <!-- モーダルなど -->
     <PersonnelMultiSelectModal v-model:open="selectModalOpen" @selected="onSelectedCandidates" />
+    <SkillEditorModal mode="view" v-model:open="skillModalOpen" :personnel-id="skillTargetId" />
+    <ResumeDetailModal
+      mode="view"
+      v-model:open="resumeModalOpen"
+      :personnel-id="resumeDataTargetId" />
     <ErrorDialog v-model:open="errorOpen" :message="errorMessage" />
 
     <v-overlay :model-value="analyzing || saving" class="align-center justify-center" persistent>
@@ -122,11 +141,16 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue';
   import PersonnelMultiSelectModal from '@/modules/personnel/PersonnelMultiSelectModal.vue';
+  import SkillEditorModal from '@/modules/skill/SkillEditorModal.vue';
+  import ResumeDetailModal from '@/modules/resume/ResumeDetailModal.vue';
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
   import type { Personnel } from '@/types/models/Personnel';
   import type { CandidateAnalysis } from '@/composables/useApi';
   import { useToast } from '@/plugins/toast';
-  import type { Proposal } from '@/types/models/Proposal';
+  import type { Proposal, ProposalAnalyseResult } from '@/types/models/Proposal';
+  import { PersonnelStoreRepo, ResumeDataStoreRepo, SkillStoreRepo } from '@/data/RepoStoreImp';
+  import cloneDeep from 'lodash.clonedeep';
+  import { http } from '@/plugins/axios';
 
   const toast = useToast();
 
@@ -150,6 +174,13 @@
   const analysisResults = ref<CandidateAnalysis[]>([]);
 
   const selectModalOpen = ref(false);
+  // スキルモーダル画面関連
+  const skillModalOpen = ref(false);
+  const skillTargetId = ref('');
+  // 経歴モーダル画面関連
+  const resumeModalOpen = ref(false);
+  const resumeDataTargetId = ref('');
+
   const analyzing = ref(false);
   const errorOpen = ref(false);
   const errorMessage = ref('');
@@ -169,7 +200,7 @@
 
   const analysisHeaders = [
     { title: '順位', key: 'rank', sortable: false, width: 80 },
-    { title: '人材ID', key: '人材ID' },
+    // { title: '人材ID', key: '人材ID' },
     { title: '名前', key: '名前' },
     { title: 'マッチ率', key: 'マッチ率', width: 120 },
     { title: 'コメント', key: 'コメント', sortable: false },
@@ -266,24 +297,59 @@
     }
     try {
       analyzing.value = true;
-
-      const baseScore = 85;
-      const step = 7;
-
-      const normalized = jobDescription.value.replace(/\s+/g, ' ').trim();
-      const preview = normalized.slice(0, 60) || '募集要項の記載内容';
-
-      const results: CandidateAnalysis[] = candidates.value.map((p, index) => {
-        const score = Math.max(60, baseScore - index * step);
-        return {
-          人材ID: p.人材ＩＤ,
-          名前: p.名前,
-          マッチ率: score,
-          コメント:
-            `募集要項（例:「${preview}…」）に対して、${p.名前}さんはこれまでの経験・スキルが近く、` +
-            '早期に戦力化が期待できると想定されます。',
-        };
+      const resumeRepo = new ResumeDataStoreRepo();
+      const skillRepo = new SkillStoreRepo();
+      const req: any[] = [];
+      const nameMap = new Map<string, string>();
+      candidates.value.forEach((p) => {
+        const resume = cloneDeep(resumeRepo.findById(p.人材ＩＤ));
+        nameMap.set(p.人材ＩＤ, p.名前);
+        delete resume?.AI分析結果;
+        const skill = skillRepo.findById(p.人材ＩＤ);
+        console.log(p);
+        console.log(resume);
+        console.log(skill);
+        req.push({
+          id: p.人材ＩＤ,
+          経歴情報: resume,
+          スキル採点情報: skill,
+        });
       });
+      console.log(req);
+
+      const { data } = await http.post<ProposalAnalyseResult[]>('/api/proposal/analyse', {
+        募集要項: jobDescription.value,
+        候補要員: req,
+      });
+      console.log(data);
+      const results: CandidateAnalysis[] = [];
+      data.forEach((res) => {
+        results.push({
+          人材ID: res.人材ＩＤ,
+          名前: nameMap.get(res.人材ＩＤ) ?? '',
+          マッチ率: res.マッチ率,
+          コメント: res.理由,
+        });
+        res.人材ＩＤ;
+      });
+
+      // const baseScore = 85;
+      // const step = 7;
+
+      // const normalized = jobDescription.value.replace(/\s+/g, ' ').trim();
+      // const preview = normalized.slice(0, 60) || '募集要項の記載内容';
+
+      // const results: CandidateAnalysis[] = candidates.value.map((p, index) => {
+      //   const score = Math.max(60, baseScore - index * step);
+      //   return {
+      //     人材ID: p.人材ＩＤ,
+      //     名前: p.名前,
+      //     マッチ率: score,
+      //     コメント:
+      //       `募集要項（例:「${preview}…」）に対して、${p.名前}さんはこれまでの経験・スキルが近く、` +
+      //       '早期に戦力化が期待できると想定されます。',
+      //   };
+      // });
 
       results.sort((a, b) => b.マッチ率 - a.マッチ率);
       analysisResults.value = results;
@@ -294,6 +360,16 @@
     } finally {
       analyzing.value = false;
     }
+  }
+
+  function onOpenSkill(id: string) {
+    skillTargetId.value = id;
+    skillModalOpen.value = true;
+  }
+
+  function onOpenResume(id: string) {
+    resumeDataTargetId.value = id;
+    resumeModalOpen.value = true;
   }
 
   function onSave() {
