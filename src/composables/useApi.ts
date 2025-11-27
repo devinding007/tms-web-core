@@ -12,6 +12,7 @@ import { Repo } from '@/data/Repo';
 import {
   ExamPaperStoreRepo,
   ExamRunStoreRepo,
+  PersonnelFilters,
   PersonnelStoreRepo,
   QuestionStoreRepo,
   SkillStoreRepo,
@@ -33,7 +34,7 @@ function delay<T>(data: T, ms = 300): Promise<T> {
 
 // 人材データ検索
 export async function listPersonnel(
-  keyword?: string,
+  filters: PersonnelFilters,
   page = 1,
   pageSize = 10
 ): Promise<ApiListResult<Personnel>> {
@@ -44,8 +45,8 @@ export async function listPersonnel(
   };
 
   // const { items: listResult, total: total } = repo.list(pagination);
-
-  return delay(repo.list(pagination));
+  // return delay(repo.list(pagination));
+  return delay(repo.findBy!(filters, pagination));
 }
 export async function getPersonnel(id: string): Promise<Personnel | undefined> {
   return delay(new PersonnelStoreRepo().findById(id), 3000);
@@ -347,6 +348,18 @@ export async function submitExamAnswers(payload: ExamSubmissionPayload): Promise
   await delay(500);
   // デモのため常に成功
   return;
+}
+
+// 日付フォーマット
+export function formatDate(date: Date, format: string): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // 0始まりなので +1
+  const day = String(date.getDate()).padStart(2, '0');
+  let ret = format;
+  ret = format.replace('yyyy', year.toString());
+  ret = ret.replace('mm', month.toString());
+  ret = ret.replace('dd', day.toString());
+  return ret;
 }
 
 /**

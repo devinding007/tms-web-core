@@ -20,9 +20,26 @@
                 { title: 'BP', value: 1 },
               ]"
               label="BPフラグ"
-              density="comfortable"
               style="max-width: 200px"
-              hide-details />
+              density="compact" />
+
+            <!-- density="comfortable" -->
+            <!-- <v-locale-provider locale="ja"> -->
+            <v-date-input
+              prepend-icon=""
+              v-model="filters.案件終了日_FROM"
+              label="案件終了日(FROM)"
+              clearable
+              style="max-width: 200px">
+            </v-date-input>
+            <v-date-input
+              prepend-icon=""
+              v-model="filters.案件終了日_TO"
+              style="max-width: 200px"
+              clearable
+              label="案件終了日(TO)">
+            </v-date-input>
+            <!-- </v-locale-provider> -->
           </div>
         </template>
       </SearchBar>
@@ -114,7 +131,9 @@
   import { useToast } from '@/plugins/toast';
   import ResumeDetailModal from '@/modules/resume/ResumeDetailModal.vue';
   import { deletePersonnel, listPersonnel } from '@/composables/useApi';
+  import { VDateInput } from 'vuetify/labs/VDateInput';
   import cloneDeep from 'lodash.clonedeep';
+  import { PersonnelFilters } from '@/data/RepoStoreImp';
 
   const props = withDefaults(defineProps<{ mode?: 'edit' | 'select' }>(), { mode: 'edit' });
   const emit = defineEmits<{ (e: 'selected', v: Personnel): void }>();
@@ -136,6 +155,12 @@
       ? [...baseHeaders, { title: '操作', key: 'actions', sortable: false, width: 280 }]
       : baseHeaders
   );
+
+  const filters = ref<PersonnelFilters>({
+    キーワード: '',
+    // 案件終了日_FROM: '',
+    // 案件終了日_TO: '',
+  });
 
   const items = ref<Personnel[]>([]);
   const total = ref(0);
@@ -159,10 +184,11 @@
   async function fetchList() {
     try {
       loading.value = true;
-      const res = await listPersonnel(keyword.value || undefined, page.value, pageSize.value);
-      items.value = res.items.filter((x) =>
-        bp.value === undefined ? true : x.BPフラグ === bp.value
-      );
+      const res = await listPersonnel(filters.value, page.value, pageSize.value);
+      // items.value = res.items.filter((x) =>
+      //   bp.value === undefined ? true : x.BPフラグ === bp.value
+      // );
+      items.value = res.items;
       total.value = res.total;
     } catch (e: any) {
       errorMessage.value = '検索に失敗しました';

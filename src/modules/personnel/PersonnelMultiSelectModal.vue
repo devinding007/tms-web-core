@@ -19,9 +19,22 @@
                 v-model="bp"
                 :items="bpItems"
                 label="BPフラグ"
-                density="comfortable"
+                density="compact"
+                style="max-width: 200px" />
+              <v-date-input
+                prepend-icon=""
+                v-model="filters.案件終了日_FROM"
+                label="案件終了日(FROM)"
+                clearable
+                style="max-width: 200px">
+              </v-date-input>
+              <v-date-input
+                prepend-icon=""
+                v-model="filters.案件終了日_TO"
                 style="max-width: 200px"
-                hide-details />
+                clearable
+                label="案件終了日(TO)">
+              </v-date-input>
             </div>
           </template>
         </SearchBar>
@@ -77,6 +90,8 @@
   import type { Personnel } from '@/types/models/Personnel';
   import { listPersonnel } from '@/composables/useApi';
   import { BP_FLAG_ITEMS } from '@/types/codes';
+  import { PersonnelFilters } from '@/data/RepoStoreImp';
+  import { VDateInput } from 'vuetify/labs/VDateInput';
 
   const props = defineProps<{
     open: boolean;
@@ -100,6 +115,12 @@
   const loading = ref(false);
   const errorOpen = ref(false);
   const errorMessage = ref('');
+
+  const filters = ref<PersonnelFilters>({
+    キーワード: '',
+    // 案件終了日_FROM: '',
+    // 案件終了日_TO: '',
+  });
 
   const headers = [
     { title: '所属会社', key: '所属会社' },
@@ -126,8 +147,9 @@
 
   async function fetchList() {
     try {
+      selectedIds.value = [];
       loading.value = true;
-      const res = await listPersonnel(keyword.value || undefined, 1, 100);
+      const res = await listPersonnel(filters.value, 1, 100);
       items.value = res.items.filter((x) =>
         bp.value === undefined ? true : x.BPフラグ === bp.value
       );

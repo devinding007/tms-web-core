@@ -1,4 +1,5 @@
 import type { UUID } from '@/types/common';
+
 export interface Personnel {
   人材ＩＤ: UUID;
   所属会社: string;

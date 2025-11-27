@@ -22,9 +22,14 @@
             <v-locale-provider locale="ja">
               <v-date-input
                 prepend-icon=""
-                input-format="yyyymmdd"
-                v-model="form.生年月日"
+                input-format="yyyy/mm/dd"
+                v-model="生年月日_date"
                 label="生年月日(YYYY/MM/DD)">
+                <!-- <v-date-input
+                prepend-icon=""
+                input-format="yyyymmdd"
+                v-model="生年月日_date"
+                label="生年月日(YYYY/MM/DD)"> -->
               </v-date-input>
             </v-locale-provider>
           </v-col>
@@ -34,7 +39,7 @@
             <v-locale-provider locale="ja">
               <v-date-input
                 prepend-icon=""
-                v-model="form.現案件終了年月日"
+                v-model="案件終了日_date"
                 label="現案件終了年月日(YYYY/MM/DD)">
               </v-date-input>
             </v-locale-provider>
@@ -71,7 +76,7 @@
   import type { Personnel } from '@/types/models/Personnel';
   import { useToast } from '@/plugins/toast';
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
-  import { createPersonnel, updatePersonnel } from '@/composables/useApi';
+  import { createPersonnel, formatDate, updatePersonnel } from '@/composables/useApi';
   import { VDateInput } from 'vuetify/labs/VDateInput';
 
   const props = defineProps<{ open: boolean; item?: Personnel | null }>();
@@ -82,6 +87,25 @@
 
   const model = computed({ get: () => props.open, set: (v: boolean) => emit('update:open', v) });
   const isNew = computed(() => !props.item?.人材ＩＤ);
+
+  const 生年月日_date = ref<Date>();
+  const 案件終了日_date = ref<Date>();
+
+  watch(生年月日_date, (v) => {
+    if (v) {
+      form.生年月日 = formatDate(v, 'yyyy/mm/dd');
+    } else {
+      form.生年月日 = '';
+    }
+  });
+
+  watch(案件終了日_date, (v) => {
+    if (v) {
+      form.現案件終了年月日 = formatDate(v, 'yyyy/mm/dd');
+    } else {
+      form.現案件終了年月日 = '';
+    }
+  });
 
   const form = reactive<Personnel>({
     人材ＩＤ: props.item?.人材ＩＤ || '',
@@ -105,6 +129,11 @@
       form.生年月日 = v?.生年月日 || '';
       form.現案件終了年月日 = v?.現案件終了年月日 || '';
       form.BPフラグ = v?.BPフラグ ?? 0;
+      if (!form.生年月日) 生年月日_date.value = undefined;
+      else 生年月日_date.value = new Date(form.生年月日);
+      if (!form.現案件終了年月日) 案件終了日_date.value = undefined;
+      else 案件終了日_date.value = new Date(form.現案件終了年月日);
+
       await nextTick();
       original.value = JSON.stringify(form);
     },

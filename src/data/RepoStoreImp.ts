@@ -1,5 +1,5 @@
 import { Personnel } from '@/types/models/Personnel';
-import { Repo } from './Repo';
+import { Repo, RepoFilter } from './Repo';
 import { usePersonnelStore } from '@/store/usePersonnelStore';
 import { PageResult, Pagination } from '@/types/models/Pagination';
 import { Question } from '@/types/models/Question';
@@ -13,6 +13,14 @@ import { useExamPaperStore } from '@/store/examPaperStore';
 import { ExamRun } from '@/types/models/ExamRun';
 import { useExamRunStore } from '@/store/examRunStore';
 import cloneDeep from 'lodash.clonedeep';
+import { formatDate } from '@/composables/useApi';
+
+// 人材検索時条件
+export interface PersonnelFilters extends RepoFilter {
+  案件終了日_FROM?: Date;
+  案件終了日_TO?: Date;
+  キーワード: string;
+}
 
 // Storeを利用する人材管理リポ
 export class PersonnelStoreRepo implements Repo<Personnel> {
@@ -23,9 +31,48 @@ export class PersonnelStoreRepo implements Repo<Personnel> {
   getCount(): number {
     return this.store.items.length;
   }
-  list(p: Pagination): PageResult<Personnel> {
+
+  findBy(filter: RepoFilter, p: Pagination): PageResult<Personnel> {
+    const store = usePersonnelStore();
+    const pFilter = filter as PersonnelFilters;
     const start = (p.page - 1) * p.size;
-    const items = this.store.items;
+    // const items = store.items;
+    // console.log(items);
+    console.log(pFilter);
+    let 案件終了FROM: string = '';
+    let 案件終了TO: string = '';
+    if (pFilter.案件終了日_FROM) 案件終了FROM = formatDate(pFilter.案件終了日_FROM, 'yyyy/mm/dd');
+    if (pFilter.案件終了日_TO) 案件終了TO = formatDate(pFilter.案件終了日_TO, 'yyyy/mm/dd');
+    console.log(案件終了FROM);
+    console.log(案件終了TO);
+    const items = this.store.items.filter((item) => {
+      console.log(item.現案件終了年月日);
+      if (pFilter.案件終了日_FROM) {
+        if (案件終了FROM <= item.現案件終了年月日) {
+          console.log('from:false');
+          // return false;
+        } else return false;
+      }
+      if (pFilter.案件終了日_TO) {
+        if (案件終了TO >= item.現案件終了年月日) {
+          console.log('to:false');
+          // return false;
+        } else return false;
+      }
+      return true;
+    });
+    console.log(items.length);
+    return {
+      items: items.slice(start, start + p.size),
+      total: items.length,
+    };
+  }
+
+  list(p: Pagination): PageResult<Personnel> {
+    const store = usePersonnelStore();
+    const start = (p.page - 1) * p.size;
+    const items = store.items;
+    console.log(items.length);
     return {
       items: items.slice(start, start + p.size),
       total: items.length,
@@ -33,7 +80,8 @@ export class PersonnelStoreRepo implements Repo<Personnel> {
   }
 
   findById(id: string): Personnel | undefined {
-    const ret: Personnel | undefined = this.store.items.find((v) => v.人材ＩＤ === id);
+    const store = usePersonnelStore();
+    const ret: Personnel | undefined = store.items.find((v) => v.人材ＩＤ === id);
     // if (ret == null) {
     //   throw new Error(`人材ＩＤ[${id}]が見つかりません`);
     // }
