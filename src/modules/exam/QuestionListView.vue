@@ -137,7 +137,7 @@
   const pageSize = ref(10);
   const pageCount = computed(() => Math.ceil(total.value / pageSize.value));
   const headersBase = [
-    { title: '問題ＩＤ', key: '問題ＩＤ', width: 280 },
+    { title: '問題ＩＤ', key: '問題ＩＤ', width: 320 },
     { title: 'スキル', key: 'スキル', width: 140 },
     { title: '難易度', key: '難易度', width: 100 },
     { title: '問題文章', key: '問題文章' },
