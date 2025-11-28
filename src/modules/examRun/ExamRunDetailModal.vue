@@ -29,13 +29,8 @@
             @click="expandExamInfo = !expandExamInfo"
             ><v-icon>mdi-clipboard-text</v-icon> 試験基本情報
             <v-chip :color="examStatusColor">ステータス: {{ examStatusStr }}</v-chip>
-            <v-spacer /><v-chip variant="plain"
-              ><v-icon>
-                {{
-                  !expandExamInfo ? 'mdi-plus-circle-outline' : 'mdi-minus-circle-outline'
-                }}</v-icon
-              ></v-chip
-            >
+            <v-spacer />
+            <v-chip>クリックして{{ !expandExamInfo ? '展開' : '折り畳む' }}</v-chip>
           </v-card-title>
           <v-expand-transition>
             <v-card-text v-show="expandExamInfo">
@@ -121,13 +116,8 @@
           <v-card-title
             class="text-subtitle-1 d-flex align-center ga-2"
             @click="expandExamLinkInfo = !expandExamLinkInfo"
-            ><v-icon>mdi-clipboard-text</v-icon> 試験参加情報 <v-spacer /><v-chip variant="plain"
-              ><v-icon>
-                {{
-                  !expandExamLinkInfo ? 'mdi-plus-circle-outline' : 'mdi-minus-circle-outline'
-                }}</v-icon
-              ></v-chip
-            >
+            ><v-icon>mdi-clipboard-text</v-icon> 試験参加情報 <v-spacer />
+            <v-chip>クリックして{{ !expandExamLinkInfo ? '展開' : '折り畳む' }}</v-chip>
           </v-card-title>
 
           <v-expand-transition>
@@ -187,13 +177,8 @@
             @click="expandExamPaper = !expandExamPaper"
             ><v-icon>mdi-file-document-multiple</v-icon> 試験用紙「{{
               form.試験用紙?.試験用紙名称 || '—'
-            }}」 <v-spacer /><v-chip variant="plain"
-              ><v-icon>
-                {{
-                  !expandExamPaper ? 'mdi-plus-circle-outline' : 'mdi-minus-circle-outline'
-                }}</v-icon
-              ></v-chip
-            >
+            }}」 <v-spacer />
+            <v-chip>クリックして{{ !expandExamPaper ? '展開' : '折り畳む' }}</v-chip>
           </v-card-title>
           <v-divider></v-divider>
           <v-expand-transition>
@@ -305,39 +290,169 @@
                     </div>
                   </div>
                 </div>
-                <div v-if="isResultVisible" class="mt-4">
-                  <v-divider class="mb-3" />
-                  <div class="text-subtitle-1 mb-2 d-flex align-center ga-2">
-                    <v-icon>mdi-chart-bar</v-icon> 試験結果集計
-                  </div>
-                  <v-data-table
-                    :headers="sumHeaders"
-                    :items="summaryRows"
-                    class="rounded-lg"
-                    :items-per-page="999"
-                    ><template #bottom
-                  /></v-data-table>
-                </div>
               </template>
             </v-card-text>
           </v-expand-transition>
         </v-card>
 
-        <!-- 試験結果 -->
-        <v-card v-if="showReflectResult" variant="outlined" class="mt-4">
-          <v-card-title>
-            <div class="text-subtitle-1 mb-2 d-flex align-center ga-2">
-              <v-icon>mdi-clipboard-text</v-icon> スキル反映結果
-            </div>
-            <v-data-table
-              :headers="skillReflectionHeaders"
-              :items="form.スキル反映結果"
-              class="rounded-lg"
-              :items-per-page="999"
-              ><template #bottom
-            /></v-data-table>
+        <!-- 試験結果：正答率確認 -->
+        <v-card v-if="isResultVisible" variant="outlined" class="mt-4">
+          <v-card-title
+            class="d-flex align-center ga-3"
+            @click="expandExamResult = !expandExamResult">
+            <v-icon>mdi-chart-bar</v-icon>
+            <span class="text-subtitle-1">試験結果集計</span>
+            <v-spacer />
+            <v-chip>クリックして{{ !expandExamResult ? '展開' : '折り畳む' }}</v-chip>
           </v-card-title>
-          <v-card-text> </v-card-text>
+          <v-expand-transition>
+            <v-card-text v-show="expandExamResult">
+              <div v-if="isResultVisible">
+                <div class="text-subtitle-1 mb-2 d-flex align-center ga-2">
+                  <div class="text-caption text-medium-emphasis">
+                    スキル数：{{ summaryRowsWithRate.length }} 件 / 平均正答率：{{ avgAccuracy }}%
+                  </div>
+                </div>
+
+                <!-- スキルごとのカード -->
+                <div class="d-flex flex-wrap ga-4">
+                  <v-sheet
+                    v-for="row in summaryRowsWithRate"
+                    :key="row.スキル"
+                    class="pa-3 rounded-lg flex-grow-1"
+                    style="min-width: 260px; max-width: 360px; border: 1px solid #e0e0e0">
+                    <!-- ヘッダー：スキル名 + 正答率チップ -->
+                    <div class="d-flex align-center mb-2">
+                      <v-chip size="small" color="primary" variant="tonal" prepend-icon="mdi-tag">
+                        {{ row.スキル }}
+                      </v-chip>
+                      <v-spacer />
+                      <v-chip
+                        size="small"
+                        :color="rateColor(row.rate)"
+                        variant="tonal"
+                        prepend-icon="mdi-target">
+                        {{ row.rate }}%
+                      </v-chip>
+                    </div>
+
+                    <!-- 円グラフ + バー -->
+                    <div class="d-flex align-center ga-3">
+                      <v-progress-circular
+                        :model-value="row.rate"
+                        size="56"
+                        width="6"
+                        :color="rateColor(row.rate)">
+                        {{ row.rate }}%
+                      </v-progress-circular>
+
+                      <div class="flex-grow-1">
+                        <div class="d-flex justify-space-between text-caption mb-1">
+                          <span>正解数 / 出題数</span>
+                          <span>{{ row.ok }} / {{ row.total }}</span>
+                        </div>
+                        <v-progress-linear
+                          :model-value="row.ok"
+                          :max="row.total"
+                          height="6"
+                          rounded
+                          :color="rateColor(row.rate)" />
+
+                        <div
+                          class="mt-2 d-flex justify-space-between text-caption text-medium-emphasis">
+                          <span>正答率</span>
+                          <span>{{ row.rate }}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </v-sheet>
+                </div>
+              </div>
+            </v-card-text>
+          </v-expand-transition>
+        </v-card>
+
+        <!-- 試験結果：スキル反映 -->
+        <v-card v-if="showReflectResult" variant="outlined" class="mt-4">
+          <v-card-title
+            class="d-flex align-center ga-3"
+            @click="expandExamReflection = !expandExamReflection">
+            <v-icon>mdi-clipboard-text</v-icon>
+            <span class="text-subtitle-1">スキル反映結果</span>
+            <v-spacer />
+            <v-chip>クリックして{{ !expandExamReflection ? '展開' : '折り畳む' }}</v-chip>
+          </v-card-title>
+
+          <v-expand-transition>
+            <v-card-text v-show="expandExamReflection">
+              <!-- ここはオマケ：何件・平均変化量など -->
+              <div class="text-subtitle-1 mb-2 d-flex align-center ga-2">
+                <div class="text-caption text-medium-emphasis">
+                  <span
+                    >更新スキル数：{{ skillDiffs.length }} 件 / 平均変化：{{ avgDiffText }}</span
+                  >
+                </div>
+              </div>
+              <div class="d-flex flex-wrap ga-4">
+                <v-sheet
+                  v-for="row in skillDiffs"
+                  :key="row.スキル名"
+                  class="pa-3 rounded-lg flex-grow-1"
+                  style="min-width: 260px; max-width: 360px; border: 1px solid #e0e0e0">
+                  <!-- ヘッダー部分：スキル名 + 変化チップ -->
+                  <div class="d-flex align-center mb-2">
+                    <v-chip size="small" color="primary" variant="tonal" prepend-icon="mdi-cog">
+                      {{ row.スキル名 }}
+                    </v-chip>
+
+                    <v-spacer />
+
+                    <v-chip
+                      size="small"
+                      :color="row.diff > 0 ? 'success' : row.diff < 0 ? 'error' : 'grey'"
+                      variant="tonal"
+                      :prepend-icon="
+                        row.diff > 0
+                          ? 'mdi-arrow-up-bold'
+                          : row.diff < 0
+                          ? 'mdi-arrow-down-bold'
+                          : 'mdi-minus'
+                      ">
+                      {{ formatDiff(row.diff) }} pt
+                    </v-chip>
+                  </div>
+
+                  <!-- 数値表示 -->
+                  <div class="text-caption text-medium-emphasis mb-1">
+                    調整前：<strong>{{ row.スキル点数更新前 }}</strong> / 調整後：<strong>{{
+                      row.スキル点数更新後
+                    }}</strong>
+                  </div>
+
+                  <!-- バー表示：Before / After -->
+                  <div class="mb-1">
+                    <div class="d-flex justify-space-between text-caption mb-1">
+                      <span>Before</span>
+                      <span>{{ row.スキル点数更新前 }} pt</span>
+                    </div>
+                    <v-progress-linear :model-value="row.スキル点数更新前" height="6" rounded />
+                  </div>
+
+                  <div>
+                    <div class="d-flex justify-space-between text-caption mb-1">
+                      <span>After</span>
+                      <span>{{ row.スキル点数更新後 }} pt</span>
+                    </div>
+                    <v-progress-linear
+                      :model-value="row.スキル点数更新後"
+                      height="6"
+                      rounded
+                      color="primary" />
+                  </div>
+                </v-sheet>
+              </div>
+            </v-card-text>
+          </v-expand-transition>
         </v-card>
       </v-card-text>
 
@@ -378,7 +493,6 @@
   import { ref, reactive, computed, watch, nextTick } from 'vue';
   import type { ExamRun } from '@/types/models/ExamRun';
   import type { ExamPaper, ExamPaperQuestion } from '@/types/models/ExamPaper';
-  import type { Choice } from '@/types/models/Question';
   import { EXAM_RUN_STATUS, EXAM_RUN_STATUS_COLOR } from '@/types/codes';
   import { useToast } from '@/plugins/toast';
   import ExamPaperListDialog from '@/modules/examPaper/ExamPaperListDialog.vue';
@@ -442,6 +556,7 @@
   const expandExamLinkInfo = ref(true); //試験リンク
   const expandExamPaper = ref(true); //試験用紙
   const expandExamResult = ref(true); //試験結果
+  const expandExamReflection = ref(true); //試験反映結果
   // 試験ステータステキスト
   const examStatusStr = computed(() => EXAM_RUN_STATUS[form.試験ステータス]);
   const examStatusColor = computed(() => EXAM_RUN_STATUS_COLOR[form.試験ステータス]);
@@ -577,5 +692,48 @@
     toast.show('スキルデータの人材DB反映が完了しました', 'success');
     await load();
     reflecting.value = false;
+  }
+
+  const skillDiffs = computed(() => {
+    const list = form.スキル反映結果 ?? [];
+    return list.map((r) => {
+      const before = r.スキル点数更新前 ?? 0;
+      const after = r.スキル点数更新後 ?? 0;
+      return {
+        ...r,
+        diff: after - before,
+      };
+    });
+  });
+
+  const avgDiffText = computed(() => {
+    if (!skillDiffs.value.length) return '-';
+    const sum = skillDiffs.value.reduce((acc, x) => acc + x.diff, 0);
+    const avg = Math.round((sum / skillDiffs.value.length) * 10) / 10;
+    return (avg > 0 ? '+' : '') + avg + ' pt';
+  });
+
+  function formatDiff(v: number) {
+    if (v > 0) return `+${v}`;
+    return String(v);
+  }
+
+  const summaryRowsWithRate = computed(() => {
+    return summaryRows.value.map((r) => {
+      const rate = r.total > 0 ? Math.round((r.ok / r.total) * 100) : 0;
+      return { ...r, rate };
+    });
+  });
+
+  const avgAccuracy = computed(() => {
+    if (!summaryRowsWithRate.value.length) return 0;
+    const sum = summaryRowsWithRate.value.reduce((acc, r) => acc + r.rate, 0);
+    return Math.round(sum / summaryRowsWithRate.value.length);
+  });
+
+  function rateColor(rate: number) {
+    if (rate >= 80) return 'success';
+    if (rate >= 50) return 'warning';
+    return 'error';
   }
 </script>

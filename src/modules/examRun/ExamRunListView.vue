@@ -1,7 +1,7 @@
 <template>
   <v-card>
     <v-card-title class="d-flex align-center ga-2">
-      <v-icon>mdi-clipboard-text</v-icon> 試験一覧
+      <v-icon>mdi-clipboard-text</v-icon> 試験実施管理
       <v-spacer />
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreate">追加登録</v-btn>
     </v-card-title>
@@ -54,7 +54,12 @@
             <template #item.試験ＩＤ="{ item }">
               <v-chip size="default" variant="outlined" color="text">{{ item.試験ＩＤ }}</v-chip>
             </template>
-            <template #item.試験用紙="{ item }">{{ item.試験用紙?.試験用紙名称 }}</template>
+            <template #item.試験用紙="{ item }">
+              <v-chip size="default" variant="outlined" color="text">{{
+                item.試験用紙?.試験用紙名称
+              }}</v-chip>
+              <!-- {{ item.試験用紙?.試験用紙名称 }} -->
+            </template>
             <template #item.採点="{ item }">
               <!--実施完了、人材DB反映済の場合のみ正解数を表示-->
               <div v-if="[3, 4].includes(item.試験ステータス)">
@@ -128,8 +133,8 @@
   }));
 
   const headers = [
-    { title: '試験ＩＤ', key: '試験ＩＤ', width: 280 },
-    { title: '試験用紙', key: '試験用紙', width: 280 },
+    // { title: '試験ＩＤ', key: '試験ＩＤ', width: 280 },
+    { title: '試験用紙名', key: '試験用紙', width: 280 },
     { title: '参加者氏名', key: '参加者氏名', width: 160 },
     { title: '試験ステータス', key: '試験ステータス', width: 150 },
     { title: '正解/合計', key: '採点', width: 120 },
