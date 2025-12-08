@@ -256,7 +256,7 @@
   import { ResumeDataStoreRepo, SkillStoreRepo, ProposalStoreRepo } from '@/data/RepoStoreImp';
   import cloneDeep from 'lodash.clonedeep';
   import { http } from '@/plugins/axios';
-  import { uuid } from '@/composables/useApi';
+  import { uuid, delay } from '@/composables/useApi';
 
   const toast = useToast();
 
@@ -443,6 +443,8 @@
         募集要項: jobDescription.value,
         候補要員: req,
       });
+      await delay(undefined, 1000);
+
       const results: CandidateAnalysis[] = [];
       data.forEach((res) => {
         results.push({

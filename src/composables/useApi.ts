@@ -29,7 +29,7 @@ export function uuid(): string {
   return crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 }
 
-function delay<T>(data: T, ms = 300): Promise<T> {
+export function delay<T>(data: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms));
 }
 
@@ -213,6 +213,7 @@ export async function aiGenerateQuestion(seed?: Partial<Question>): Promise<Ques
 
 export async function aiAnalyseResume(resumeData?: ResumeData): Promise<SkillSummary> {
   const { data } = await http.post<SkillSummary>('/api/resume/analyse', resumeData);
+  await delay(undefined, 1000);
   return data;
 }
 

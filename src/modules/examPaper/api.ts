@@ -10,7 +10,7 @@ const uuid = () =>
     ? (globalThis.crypto as any).randomUUID()
     : Math.random().toString(36).slice(2)) as string;
 
-function delay<T>(data: T, ms = 600): Promise<T> {
+export function delay<T>(data: T, ms = 600): Promise<T> {
   return new Promise((r) => setTimeout(() => r(data), ms));
 }
 
@@ -86,6 +86,8 @@ export async function invokeGenerateApi(request: GenerationRequest): Promise<Que
   try {
     // console.log(http);
     const { data } = await http.post<Question[]>('/api/exam/generate', request);
+    await delay(undefined, 1000);
+
     if (!Array.isArray(data)) {
       return [];
     }
