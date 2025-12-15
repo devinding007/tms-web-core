@@ -107,6 +107,7 @@
   const loading = ref(true);
   const saving = ref(false);
   const skillOptions = ref<string[]>([]);
+  const skills = ref<SkillItem[]>([]); // スキルリスト
   watch(
     () => props.open,
     async (v) => {
@@ -116,17 +117,23 @@
   );
   async function load() {
     loading.value = true;
+    
     try {
-      const [items, options] = await Promise.all([
-        getSkillsByPersonnelId(props.personnelId),
-        listSkillOptions(),
-      ]);
+      const items = await getSkillsByPersonnelId(props.personnelId) || [];
+
+      const options = await listSkillOptions();
+
+
       rows.value = items.map((x) => ({
         ...x,
         __rowId: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
       }));
       skillOptions.value = options;
       original.value = JSON.stringify(rows.value.map(({ __rowId, ...rest }) => rest));
+      } catch (e) {
+      // ✅ エラーハンドリング（例：toast.error('スキル読み込みに失敗しました')）
+      console.error('Failed to load skills', e);
+      rows.value = []; // エラー時も空配列を設定
     } finally {
       loading.value = false;
     }

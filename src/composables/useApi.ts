@@ -18,6 +18,8 @@ import {
   QuestionStoreRepo,
   SkillStoreRepo,
 } from '@/data/RepoStoreImp';
+
+import { toPersonnel, toTalentDTO } from '@/mappers/talentMapper';
 import { ExamSession, ExamSubmissionPayload } from '@/types/models/Exam';
 import { EXAM_RUN_STATUS, ExamRunStatus, 試験実施ステータス } from '@/types/codes';
 import { ExamRun } from '@/types/models/ExamRun';
@@ -39,7 +41,6 @@ export async function listPersonnel(
   page = 1,
   pageSize = 10
 ): Promise<ApiListResult<Personnel>> {
-  const repo: Repo<Personnel> = new PersonnelStoreRepo();
   const pagination: Pagination = {
     page: page,
     size: pageSize,
@@ -47,54 +48,103 @@ export async function listPersonnel(
 
   // const { items: listResult, total: total } = repo.list(pagination);
   // return delay(repo.list(pagination));
-  return delay(repo.findBy!(filters, pagination));
+
+
+  // ---mock data
+  // return delay(repo.findBy!(filters, pagination));
+
+  // // --- 後端から TalentDTO[] を取得 ---
+  const allDtos = await http.get('/api/talents').then(res => res.data as any[]);
+  const total = allDtos.length;
+    
+  const start = (page - 1) * pageSize;
+  const pagedDtos = allDtos.slice(start, start + pageSize);
+
+  const items = pagedDtos.map(toPersonnel);
+  return { items, total };
 }
 export async function getPersonnel(id: string): Promise<Personnel | undefined> {
-  return delay(new PersonnelStoreRepo().findById(id), 3000);
+  // return delay(new PersonnelStoreRepo().findById(id), 3000);
   // return delay(PERSONNEL.find((p) => p.人材ＩＤ === id));
+
+  const response = await http.get(`/api/talents/${id}`);
+  return toPersonnel(response.data);
 }
-export async function createPersonnel(p: Omit<Personnel, '人材ID'>): Promise<Personnel> {
-  const newItem: Personnel = {
-    ...p,
-    人材ＩＤ: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
-  } as Personnel;
-  new PersonnelStoreRepo().save(newItem);
-  // (PERSONNEL as any).unshift(newItem);
-  return delay(newItem, 1200);
+// mock data用
+// export async function createPersonnel(p: Omit<Personnel, '人材ID'>): Promise<Personnel> {
+//   const newItem: Personnel = {
+//     ...p,
+//     人材ＩＤ: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
+//   } as Personnel;
+//   new PersonnelStoreRepo().save(newItem);
+//   // (PERSONNEL as any).unshift(newItem);
+//   return delay(newItem, 1200);
+//}
+
+export async function createPersonnel(
+  p: Omit<Personnel, '人材ＩＤ'>
+): Promise<Personnel> {
+  // ----- 前端のPersonnel形式を、バックエンドのTalentDTO形式に変換 -----
+  const dto = toTalentDTO(p);
+
+  // ----- バックエンドに新規登録リクエストを送信（POST /api/talents） -----
+  const response = await http.post('/api/talents', dto);
+
+  // ----- バックエンドから返却されるTalentDTOを、フロント側のPersonnel形式に変換 -----
+  return toPersonnel(response.data);
 }
+// 更新
+// mock data用
+// export async function updatePersonnel(p: Personnel): Promise<Personnel> {
+//   // const idx = PERSONNEL.findIndex((x) => x.人材ＩＤ === p.人材ＩＤ);
+//   // if (idx >= 0) PERSONNEL[idx] = p;
+//   new PersonnelStoreRepo().save(p);
+//   return delay(p, 1200);
+// }
+
 export async function updatePersonnel(p: Personnel): Promise<Personnel> {
-  // const idx = PERSONNEL.findIndex((x) => x.人材ＩＤ === p.人材ＩＤ);
-  // if (idx >= 0) PERSONNEL[idx] = p;
-  new PersonnelStoreRepo().save(p);
-  return delay(p, 1200);
+  const dto = toTalentDTO(p);
+  const response = await http.put(`/api/talents/${p.人材ＩＤ}`, dto);
+  return toPersonnel(response.data);
 }
 
 // 人材データ削除
+// export async function deletePersonnel(id: string): Promise<void> {
+//   new PersonnelStoreRepo().remove(id);
+//   // const idx = PERSONNEL.findIndex((x) => x.人材ＩＤ === id);
+//   // if (idx >= 0) PERSONNEL.splice(idx, 1);
+//   return delay(undefined as any, 300);
+// }
+
 export async function deletePersonnel(id: string): Promise<void> {
-  new PersonnelStoreRepo().remove(id);
-  // const idx = PERSONNEL.findIndex((x) => x.人材ＩＤ === id);
-  // if (idx >= 0) PERSONNEL.splice(idx, 1);
-  return delay(undefined as any, 300);
+  await http.patch(`/api/talents/${id}/soft-delete`);
 }
 
+// export async function listSkillOptions(): Promise<string[]> {
+//   const res = await new SkillStoreRepo().list({ page: 1, size: 1000 });
+//   const skillList: Set<string> = new Set();
+//   res.items.forEach((item) => {
+//     item.スキル.forEach((skill) => {
+//       skillList.add(skill.スキル名);
+//     });
+//   });
+//   return delay([...skillList]);
+// }
+
 export async function listSkillOptions(): Promise<string[]> {
-  const res = new SkillStoreRepo().list({
-    page: 1,
-    size: 100,
-  });
-  const skillList: Set<string> = new Set();
-  res.items.forEach((item) => {
-    item.スキル.forEach((skill) => {
-      skillList.add(skill.スキル名);
-    });
-  });
-  return delay([...skillList]);
+  const res = await http.get<string[]>('/api/skill/options');
+  return res.data;
 }
 
 // スキル取得
+// export async function getSkillsByPersonnelId(id: string): Promise<SkillItem[]> {
+//   const skillPayload: PersonnelSkillPayload | undefined = await new SkillStoreRepo().findById(id);
+//   return delay(skillPayload ? [...skillPayload.スキル] : []);
+// }
+
 export async function getSkillsByPersonnelId(id: string): Promise<SkillItem[]> {
-  const skillPayload: PersonnelSkillPayload | undefined = new SkillStoreRepo().findById(id);
-  return delay(skillPayload ? [...skillPayload.スキル] : []);
+  const payload = await getSkillPayloadByPersonnelId(id);
+  return payload?.スキル || []; // undefined なら空配列
 }
 // スキル保存
 export async function saveSkills(payload: PersonnelSkillPayload): Promise<void> {
@@ -111,34 +161,77 @@ export interface QuestionFilters {
   自動生成フラグ?: 0 | 1;
   キーワード?: string;
 }
+//mock data用
+//---------------
+// export async function listQuestions(
+//   filters: QuestionFilters,
+//   page = 1,
+//   pageSize = 10
+// ): Promise<ApiListResult<Question>> {
+//   const pagination: Pagination = {
+//     page: page,
+//     size: pageSize,
+//   };
+//   const repo = new QuestionStoreRepo();
+//   const res: PageResult<Question> = repo.list(pagination);
+//   return delay({
+//     items: res.items,
+//     total: res.total,
+//   });
+// }
+// 問題データ検索（フィルタ条件付き）
 export async function listQuestions(
   filters: QuestionFilters,
   page = 1,
   pageSize = 10
 ): Promise<ApiListResult<Question>> {
-  const pagination: Pagination = {
-    page: page,
-    size: pageSize,
-  };
-  const repo = new QuestionStoreRepo();
-  const res: PageResult<Question> = repo.list(pagination);
-  return delay({
-    items: res.items,
-    total: res.total,
-  });
+  // クエリパラメータを構築
+  const params = new URLSearchParams();
+  if (filters.問題ＩＤ) params.append('questionId', filters.問題ＩＤ);
+  if (filters.スキル) params.append('skill', filters.スキル);
+  if (filters.難易度_FROM !== undefined) params.append('difficultyFrom', filters.難易度_FROM.toString());
+  if (filters.難易度_TO !== undefined) params.append('difficultyTo', filters.難易度_TO.toString());
+  if (filters.自動生成フラグ !== undefined) params.append('isAutoGenerated', filters.自動生成フラグ.toString());
+  if (filters.キーワード) params.append('keyword', filters.キーワード);
+  params.append('page', page.toString());
+  params.append('size', pageSize.toString());
+
+  // バックエンドAPIを呼び出し
+  const res = await http.get(`/api/questions?${params.toString()}`);
+  console.log('listQuestions response data:', res.data);
+  return res.data; // { items: Question[], total: number }
 }
+// mock data用
+//---------------
+// export async function getQuestion(id: string): Promise<Question | undefined> {
+//   return delay(new QuestionStoreRepo().findById(id));
+// }
+// export async function saveQuestion(q: Question): Promise<Question> {
+//   new QuestionStoreRepo().save(q);
+//   return delay(q);
+// }
+// export async function deleteQuestion(id: string): Promise<void> {
+//   new QuestionStoreRepo().remove(id);
+//   return delay(undefined as any, 800);
+// }
+
+// 問題詳細取得
 export async function getQuestion(id: string): Promise<Question | undefined> {
-  return delay(new QuestionStoreRepo().findById(id));
-}
-export async function saveQuestion(q: Question): Promise<Question> {
-  new QuestionStoreRepo().save(q);
-  return delay(q);
-}
-export async function deleteQuestion(id: string): Promise<void> {
-  new QuestionStoreRepo().remove(id);
-  return delay(undefined as any, 800);
+  const res = await http.get(`/api/questions/${id}`);
+  return res.data; // Question (日本語フィールド)
 }
 
+// 問題保存（新規作成・更新）
+export async function saveQuestion(q: Question): Promise<Question> {
+  console.log('Saving question:', q);
+  const res = await http.post('/api/questions', q);
+  return res.data; // 保存後の Question (日本語フィールド)
+}
+
+// 問題削除（論理削除）
+export async function deleteQuestion(id: string): Promise<void> {
+  await http.delete(`/api/questions/${id}`);
+}
 // 試験用紙関連
 export interface PaperFilters {
   名称?: string;
@@ -424,14 +517,14 @@ export function calcNewSkillPoint(oldPoint: number, level: number, isRightAnswer
 export async function reflectSkillPoint(examId: string): Promise<SkillUpdate[]> {
   const repo: ExamRunStoreRepo = new ExamRunStoreRepo();
   const skillRepo: SkillStoreRepo = new SkillStoreRepo();
-  const examRun = repo.findById(examId);
+  const examRun = await repo.findById(examId);
   if (!examRun || !examRun.試験問題解答) throw new Error('試験実施情報が存在しません。');
   if (!examRun.参加者人材ＩＤ) throw new Error('参加者が登録されておりません');
   const answerMap = new Map<string, string>();
   examRun.試験問題解答.forEach((ans) => {
     answerMap.set(ans.試験用紙問題ＩＤ, ans.回答試験用紙選択肢ＩＤ);
   });
-  const skillDto = skillRepo.findById(examRun.参加者人材ＩＤ);
+  const skillDto = await skillRepo.findById(examRun.参加者人材ＩＤ);
   const skillMap = new Map<string, number>();
   skillDto?.スキル.forEach((skill) => {
     skillMap.set(skill.スキル名, skill.スキル点数);
@@ -495,4 +588,32 @@ export async function saveProposal(proposal: Proposal): Promise<Proposal> {
 export async function deleteProposal(id: string): Promise<void> {
   new ProposalStoreRepo().remove(id);
   return delay(undefined, 500);
+}
+
+// 履歴書関連
+// 履歴書保存
+export async function saveResume(resume: ResumeData): Promise<void> {
+  await http.put(`/api/resume/${resume.人材ＩＤ}`, resume);
+}
+export async function getResumeByPersonnelId(id: string): Promise<ResumeData | undefined> {
+  const res = await http.get(`/api/resume/${id}`);
+  return res.data;
+}
+
+// スキル関連
+export async function saveSkillPayload(payload: PersonnelSkillPayload): Promise<void> {
+  await http.put(`/api/skill/${payload.人材ＩＤ}`, payload);
+}
+export async function getSkillPayloadByPersonnelId(id: string): Promise<PersonnelSkillPayload | undefined> {
+  try {
+    const res = await http.get(`/api/skill/${id}`);
+    return res.data;
+  } catch (error: any) {
+    // 404 の場合 → スキル未登録とみなして undefined を返す（エラーにしない）
+    if (error.message?.includes('404')) {
+      return undefined;
+    }
+    // 他のエラーは再スロー
+    throw error;
+  }
 }

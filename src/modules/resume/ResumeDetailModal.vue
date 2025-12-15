@@ -145,12 +145,26 @@
     (v) => (openSync.value = v)
   );
   watch(openSync, (v) => emit('update:open', v));
-  watch(openSync, (v) => {
+  watch(openSync, async(v) => {
     if (v && props.personnelId) {
       // 人材ＩＤで経歴データを検索する
       // TODO
       file.value = null;
-      form.value = new ResumeDataStoreRepo().findById(props.personnelId);
+      form.value = undefined;
+      try {
+        const data = await new ResumeDataStoreRepo().findById(props.personnelId);
+        //
+        form.value = data || undefined;
+      } catch (e) {
+        form.value = undefined;
+        
+      }
+      original.value = JSON.stringify(form.value);
+
+    } else {
+      // 模态框关闭时也清空
+      form.value = undefined;
+      original.value = JSON.stringify(undefined);
     }
   });
 
@@ -209,21 +223,31 @@
     try {
       if (props.personnelId && form.value) {
         // debugger;
-        const person = personnelRepo.findById(props.personnelId);
-        const resumeData = cloneDeep(toRaw(form.value));
-        resumeData.人材ＩＤ = props.personnelId;
+
         console.log('save started');
+
+        const person =  await personnelRepo.findById(props.personnelId);
         if (selections.basic) {
-          person!.名前 = form.value.氏名!;
-          personnelRepo.save(person!);
+          console.log('form.value.氏名:',form.value.氏名)
+          if (form.value.氏名 !== undefined) {
+            person.名前 = form.value.氏名; 
+          }
+          console.log('form.value.出生年月:',form.value.出生年月)
+          if (form.value.出生年月 !== undefined) {
+            person.生年月日 = convertJapaneseYearMonthToDate(form.value.出生年月);
+          }
+          console.log('person:',person)
+          personnelRepo.save(person);
           console.log('personnel saved');
         }
-        if (!selections.analysis) {
-          resumeData.AI分析結果 = undefined;
-        }
         if (selections.resume) {
-          resumeRepo.save(resumeData);
-          console.log('resume saved');
+            const resumeData = cloneDeep(toRaw(form.value));
+            resumeData.人材ＩＤ = props.personnelId;
+            if (!selections.analysis) {
+              resumeData.AI分析結果 = undefined;
+            }
+            
+            await resumeRepo.save(resumeData);
         }
         // AI経歴分析済の場合
         if (form.value.AI分析結果 && form.value.AI分析結果.スキル採点) {
@@ -254,9 +278,20 @@
       toast.show('保存しました', 'success');
       openSync.value = false;
     } catch (e) {
-      // ui.alert('保存に失敗しました')
+      console.error('获取人材情報失败:', e);
     } finally {
       saving.value = false;
     }
   }
+
+  function convertJapaneseYearMonthToDate(yearMonth: string): string {
+      // "1987年8月" → "1987-08-01"
+      const match = yearMonth.match(/(\d{4})年(\d{1,2})月/);
+      if (match) {
+        const year = match[1];
+        const month = match[2].padStart(2, '0');
+        return `${year}-${month}-01`;  // 
+      }
+      return yearMonth;  
+    }
 </script>

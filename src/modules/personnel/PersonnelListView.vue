@@ -111,7 +111,7 @@
     </v-card-text>
   </v-card>
 
-  <ResumeDetailModal v-model:open="resumeDataOpen" :personnel-id="resumeDataTargetId" />
+  <ResumeDetailModal v-model:open="resumeDataOpen" :personnel-id="resumeDataTargetId" @saved="onResumeSaved"/>
 
   <PersonnelEditor
     v-if="mode === 'edit'"
@@ -130,7 +130,7 @@
   import type { Personnel } from '@/types/models/Personnel';
   import { useToast } from '@/plugins/toast';
   import ResumeDetailModal from '@/modules/resume/ResumeDetailModal.vue';
-  import { deletePersonnel, listPersonnel } from '@/composables/useApi';
+  import { deletePersonnel, listPersonnel, getPersonnel } from '@/composables/useApi';
   import { VDateInput } from 'vuetify/labs/VDateInput';
   import cloneDeep from 'lodash.clonedeep';
   import { PersonnelFilters } from '@/data/RepoStoreImp';
@@ -236,6 +236,31 @@
   function openResumeData(item: Personnel) {
     resumeDataOpen.value = true;
     resumeDataTargetId.value = item.人材ＩＤ;
+  }
+
+  async function onResumeSaved() {
+    if (!resumeDataTargetId.value) return;
+    
+    try {
+      // 
+      const updatedPersonnel = await getPersonnel(resumeDataTargetId.value);
+      
+      if (updatedPersonnel) {
+        // 
+        const index = items.value.findIndex(
+          (item) => item.人材ＩＤ === resumeDataTargetId.value
+        );
+        
+        if (index !== -1) {
+          items.value[index] = updatedPersonnel;
+          toast.show('人材情報を更新しました', 'success');
+        }
+      }
+    } catch (e) {
+      console.error('人材データの再取得に失敗:', e);
+      errorMessage.value = '最新データの取得に失敗しました';
+      errorOpen.value = true;
+    }
   }
 
   function onClickRow(_e: any, ctx: any) {

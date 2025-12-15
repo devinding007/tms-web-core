@@ -76,7 +76,7 @@
   import type { Personnel } from '@/types/models/Personnel';
   import { useToast } from '@/plugins/toast';
   import ErrorDialog from '@/components/common/ErrorDialog.vue';
-  import { createPersonnel, formatDate, updatePersonnel } from '@/composables/useApi';
+  import { createPersonnel, listPersonnel, formatDate, updatePersonnel } from '@/composables/useApi';
   import { VDateInput } from 'vuetify/labs/VDateInput';
 
   const props = defineProps<{ open: boolean; item?: Personnel | null }>();
@@ -158,6 +158,7 @@
       } else {
         res = await updatePersonnel(form);
       }
+      
       toast.show('保存しました', 'success');
       emit('saved', res);
       original.value = JSON.stringify(form);

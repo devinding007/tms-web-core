@@ -57,7 +57,8 @@
           ><v-data-table
             :headers="computedHeaders"
             :items="items"
-            :items-per-page="pageSize"
+            :items-per-page="-1"
+            :hide-default-footer="true"
             :page="page"
             item-key="問題ＩＤ"
             class="elevation-1 rounded-lg"
@@ -163,6 +164,7 @@
   async function fetchList() {
     try {
       loading.value = true;
+      console.log('[FETCH] 请求分页:', page.value, pageSize.value);
       const res = await listQuestions(
         {
           問題ＩＤ: filterId.value || undefined,
@@ -175,6 +177,7 @@
         page.value,
         pageSize.value
       );
+      console.log('[FETCH] 返回数据:', res.items);
       items.value = res.items;
       total.value = res.total;
       // items.value = [];
