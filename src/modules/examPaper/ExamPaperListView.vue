@@ -34,7 +34,8 @@
           <v-data-table
             :headers="computedHeaders"
             :items="items"
-            :items-per-page="pageSize"
+            :items-per-page="-1"
+            :hide-default-footer="true"
             :page="page"
             item-key="試験用紙ＩＤ"
             class="elevation-1 rounded-lg"

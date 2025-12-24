@@ -165,7 +165,7 @@
         <v-btn
           color="primary"
           prepend-icon="mdi-send"
-          :disabled="!allAnswered || submitting"
+          :disabled="!allAnswered || submitting || hasSubmitted"
           :loading="submitting"
           @click="onSubmit">
           提出
@@ -224,6 +224,7 @@
 
   const loading = ref(true);
   const submitting = ref(false);
+  const hasSubmitted = ref(false); 
 
   const examData = ref<ExamRun | undefined>();
 
@@ -277,7 +278,20 @@
       }
 
       examData.value = res;
-      startExamRun(linkId);
+
+      const status = res.試験ステータス;
+      if (status === 1) {
+        // 未实施 → 开始考试
+        await startExamRun(linkId);
+      } else if (status >= 2) {
+        //
+        hasSubmitted.value = true;
+        toast.show('この試験は既に実施済みです。', 'warning');
+      } else if (status === 0) {
+        // 準備中 → 提示用户先“确定”
+        toast.show('試験がまだ確定されていません。管理者に確認してください。', 'error');
+        hasSubmitted.value = true;
+      }
     } catch (e) {
       console.log(e);
       errorMessage.value = '試験データを取得できませんでした。';
@@ -288,13 +302,16 @@
   });
 
   async function onSubmit() {
+    if (hasSubmitted.value) return;
     if (!examData.value) return;
     try {
       submitting.value = true;
       const payload = buildSubmissionPayload(examData.value, answers);
+      console.log('提交的payload:', JSON.stringify(payload, null, 2));
       await submitExamAnswers(payload);
 
       toast.show('提出しました', 'success');
+      hasSubmitted.value = true;
       doneOpen.value = true;
     } catch (e) {
       errorMessage.value = '送信に失敗しました。もう一度お試しください。';

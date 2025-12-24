@@ -66,6 +66,7 @@
     <ProposalEditorModal
       v-model:open="editorOpen"
       :proposalId="editing"
+      :is-editing="!!editing" 
       @save="onSavedFromEditor" />
     <ErrorDialog v-model:open="errorOpen" :message="errorMessage" />
   </div>
@@ -127,7 +128,7 @@
   }
 
   function openNew() {
-    editing.value = generateUuid();
+    editing.value = null;
     editorOpen.value = true;
   }
 

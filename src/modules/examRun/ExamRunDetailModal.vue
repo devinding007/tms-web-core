@@ -504,6 +504,7 @@
     reflectSkillPoint,
     saveExamRun,
     uuid,
+    getExamPaper,
   } from '@/composables/useApi';
   import { Personnel } from '@/types/models/Personnel';
 
@@ -587,15 +588,14 @@
     { title: '正解数', key: 'ok', width: 100 },
   ];
   const summaryRows = computed(() => {
-    const rows: Record<string, { スキル: string; total: number; ok: number }> = {};
-    if (!form.試験用紙) return [];
-    for (const p of form.試験用紙.問題リスト) {
-      const key = p.スキル;
-      if (!rows[key]) rows[key] = { スキル: key, total: 0, ok: 0 };
-      rows[key].total += 1;
-      if (userAnswerOf(p.試験用紙問題ＩＤ) === p.模範回答) rows[key].ok += 1;
-    }
-    return Object.values(rows);
+    if (!form.試験用紙 || !form.試験問題数 || form.試験問題数 <= 0) return [];
+  
+    // 🔴 直接使用後端提供的總數
+    return [{
+      スキル: '全体',
+      total: form.試験問題数,
+      ok: form.試験正解数 ?? 0
+    }];
   });
 
   watch(
@@ -641,17 +641,40 @@
 
   const paperOpen = ref(false);
   async function chooseFirstPaper(examPaper: ExamPaper) {
-    form.試験用紙 = examPaper;
-    console.log(form.試験用紙);
+    if (examPaper.試験用紙ＩＤ) {
+      const fullPaper = await getExamPaper(examPaper.試験用紙ＩＤ);
+      if (fullPaper) {
+        form.試験用紙 = fullPaper; // ← 包含完整問題列表
+      } else {
+        toast.show('試験用紙の詳細取得に失敗しました', 'error');
+      }
+  }
     paperOpen.value = false;
   }
 
   async function onConfirmBase() {
     try {
       saving.value = true;
-      let saved = await saveExamRun(form);
+      const examRunToSave = { ...form };
+      if (form.試験用紙) {
+        examRunToSave.試験用紙 = {
+          // 使用半形ID（與後端 @JsonProperty("試験用紙ID") 一致）
+          試験用紙ID: form.試験用紙.試験用紙ＩＤ, //
+          試験用紙名称: form.試験用紙.試験用紙名称,
+          説明: form.試験用紙.説明,
+          作成日時: form.試験用紙.作成日時,
+          削除フラグ: form.試験用紙.削除フラグ,
+          // 保存時不需要問題列表
+          問題リスト: [],
+        };
+      }
+      let saved = await saveExamRun(examRunToSave);
       saved = await confirmExamRun(saved?.試験ＩＤ);
+
+      const originalPaper = form.試験用紙;
+
       Object.assign(form, saved);
+      form.試験用紙 = originalPaper; 
       toast.show('試験基本情報を確定しました', 'success');
       emit('saved');
     } finally {
@@ -688,10 +711,16 @@
 
   async function onReflectResult() {
     reflecting.value = true;
-    await reflectSkillPoint(form.試験ＩＤ);
-    toast.show('スキルデータの人材DB反映が完了しました', 'success');
-    await load();
-    reflecting.value = false;
+    try {
+      await reflectSkillPoint(form.試験ＩＤ);
+      await load(); // ✅ 现在 GET 会返回正确的 スキル反映結果
+      toast.show('スキル反映が完了しました', 'success');
+      emit('saved');
+    } catch (e) {
+      toast.show('反映に失敗しました', 'error');
+    } finally {
+      reflecting.value = false;
+    }
   }
 
   const skillDiffs = computed(() => {

@@ -17,7 +17,7 @@ export interface CandidateAnalysis {
 }
 
 export interface ProposalAnalyseResult {
-  人材ＩＤ: string;
+  人材ID: string;
   マッチ率: number;
   理由: string;
   スキル採点: SkillItem[];

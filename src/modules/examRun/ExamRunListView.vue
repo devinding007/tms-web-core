@@ -38,7 +38,8 @@
           <v-data-table
             :headers="headers"
             :items="items"
-            :items-per-page="pageSize"
+            :items-per-page="-1"
+            :hide-default-footer="true"
             :page="page"
             item-key="試験ＩＤ"
             class="elevation-1 rounded-lg">
@@ -56,14 +57,14 @@
             </template>
             <template #item.試験用紙="{ item }">
               <v-chip size="default" variant="outlined" color="text">{{
-                item.試験用紙?.試験用紙名称
+                item.試験用紙?.試験用紙名称 || '（不明）'
               }}</v-chip>
               <!-- {{ item.試験用紙?.試験用紙名称 }} -->
             </template>
             <template #item.採点="{ item }">
               <!--実施完了、人材DB反映済の場合のみ正解数を表示-->
               <div v-if="[3, 4].includes(item.試験ステータス)">
-                {{ item.試験正解数 }}問 / {{ item.試験用紙?.問題リスト.length }}問
+                {{ item.試験正解数 }}問 / {{ item.試験問題数 != null ? item.試験問題数 : 0 }}問
               </div>
               <div v-else>未実施</div>
             </template>

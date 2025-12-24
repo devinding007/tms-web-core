@@ -256,12 +256,24 @@
   import { ResumeDataStoreRepo, SkillStoreRepo, ProposalStoreRepo } from '@/data/RepoStoreImp';
   import cloneDeep from 'lodash.clonedeep';
   import { http } from '@/plugins/axios';
-  import { uuid, delay } from '@/composables/useApi';
+  import { uuid, delay ,getProposalById, getResumeByPersonnelId, getSkillPayloadByPersonnelId} from '@/composables/useApi';
 
   const toast = useToast();
 
+
+  /**
+    * フォームを空の状態にリセットする
+    */
+  function resetForm() {
+      proposalId.value = props.proposalId || '';
+      proposalName.value = '';
+      jobDescription.value = '';
+      candidates.value = [];
+      analysisResults.value = [];
+    }
   const props = defineProps<{
     proposalId?: string | null;
+    isEditing?: boolean;
     saving?: boolean;
   }>();
 
@@ -343,49 +355,52 @@
     // );
   });
 
-  function load() {
+  async function load() {
     if (!props.proposalId) return;
-    const p = new ProposalStoreRepo().findById(props.proposalId);
-    console.log('opening... ' + p);
-
-    if (!p) return;
-    proposalName.value = p.提案名;
-    jobDescription.value = p.募集要項;
-    candidates.value = p.対象人材;
-    if (p.分析結果) analysisResults.value = p.分析結果;
-  }
-
-  // props.proposal 変更時にフォームへ反映
-  watch(
-    () => props.proposalId,
-    (newId) => {
-      if (newId) {
-        const p = new ProposalStoreRepo().findById(newId);
-        if (p) {
-          proposalId.value = p.提案ID;
-          proposalName.value = p.提案名;
-          jobDescription.value = p.募集要項;
-          candidates.value = p.対象人材;
-          if (p.分析結果) analysisResults.value = p.分析結果;
-          originalProposal.value = { ...p };
-        } else {
-          const id = generateUuid();
-          proposalId.value = id;
-          proposalName.value = '';
-          jobDescription.value = '';
-          originalProposal.value = {
-            提案ID: id,
-            提案名: '',
-            募集要項: '',
-            対象人材: [],
-          };
-        }
-        candidates.value = [];
-        analysisResults.value = [];
+    try {
+      const p = await getProposalById(props.proposalId); 
+      if (p) {
+        const 対象人材 = p.対象人材.map(t => ({
+        人材ＩＤ: t.talentId,
+        所属会社: t.company,
+        名前: t.name,
+        社員番号: t.employeeNumber,
+        生年月日: t.birthDate,
+        現案件終了年月日: t.projectEndDate,
+        BPフラグ: t.bpFlag ? 1 : 0,
+      }));
+        proposalId.value = p.提案ID;
+        proposalName.value = p.提案名;
+        jobDescription.value = p.募集要項;
+        candidates.value =  対象人材;
+        analysisResults.value = p.分析結果 || [];
+        originalProposal.value = { ...p };
       }
-    },
-    { immediate: true }
-  );
+    } catch (e) {
+      toast.show('提案データの取得に失敗しました', 'error');
+   }
+ }
+/**
+ * props.proposalId が変更されたときに、新規/編集に応じて初期化を分岐
+ */
+watch(
+  () => props.proposalId,
+  (newId) => {
+    if (!newId) return;
+    if (props.isEditing) {
+      // 編集モード：APIからデータをロード
+      console.log('→ 编辑模式，调用 load()');
+      load();
+    } else {
+      // 新規モード：空フォームを設定（API呼び出し不要）
+      console.log('→ 新規模式，调用 resetForm()');
+      const id = generateUuid();
+      proposalId.value = id;
+      resetForm();
+    }
+  },
+  { immediate: true }
+);
 
   function generateUuid(): string {
     return uuid();
@@ -416,56 +431,87 @@
     candidates.value = candidates.value.filter((c) => c.人材ＩＤ !== id);
   }
 
-  async function onAnalyze() {
-    if (!canAnalyze.value) {
-      toast.show('募集要項と候補要員を入力してください', 'info');
-      return;
-    }
-    try {
-      analyzing.value = true;
-      const resumeRepo = new ResumeDataStoreRepo();
-      const skillRepo = new SkillStoreRepo();
-      const req: any[] = [];
-      const nameMap = new Map<string, string>();
-      candidates.value.forEach((p) => {
-        const resume = cloneDeep(resumeRepo.findById(p.人材ＩＤ));
-        nameMap.set(p.人材ＩＤ, p.名前);
-        delete resume?.AI分析結果;
-        const skill = skillRepo.findById(p.人材ＩＤ);
-        req.push({
-          id: p.人材ＩＤ,
-          経歴情報: resume,
-          スキル採点情報: skill,
-        });
-      });
-
-      const { data } = await http.post<ProposalAnalyseResult[]>('/api/proposal/analyse', {
-        募集要項: jobDescription.value,
-        候補要員: req,
-      });
-      await delay(undefined, 1000);
-
-      const results: CandidateAnalysis[] = [];
-      data.forEach((res) => {
-        results.push({
-          人材ID: res.人材ＩＤ,
-          名前: nameMap.get(res.人材ＩＤ) ?? '',
-          マッチ率: res.マッチ率,
-          コメント: res.理由,
-          スキル採点: res.スキル採点,
-        });
-      });
-
-      results.sort((a, b) => b.マッチ率 - a.マッチ率);
-      analysisResults.value = results;
-      toast.show('適任要員の分析が完了しました', 'success');
-    } catch (e) {
-      errorMessage.value = '適任要員の分析に失敗しました';
-      errorOpen.value = true;
-    } finally {
-      analyzing.value = false;
-    }
+  /**
+ * 適任要員分析を実行する
+ * - 候補要員の経歴情報とスキル情報をAPIから取得
+ * - AI分析APIを呼び出してマッチ率を計算
+ */
+async function onAnalyze() {
+  if (!canAnalyze.value) {
+    toast.show('募集要項と候補要員を入力してください', 'info');
+    return;
   }
+  try {
+    analyzing.value = true;
+    
+    // ★★ 候補要員情報をAPIから取得するために必要なデータ構造 ★★
+    const req: any[] = [];
+    const nameMap = new Map<string, string>();
+
+    // ★★ 各候補要員の経歴・スキルをAPIから取得 ★★
+    for (const p of candidates.value) {
+      // 人材名をマッピング（分析結果表示用）
+      nameMap.set(p.人材ＩＤ, p.名前);
+      
+      // 経歴情報をAPIから取得
+      const resume = await getResumeByPersonnelId(p.人材ＩＤ);
+
+      
+     let cleanResume = {};
+     if (resume) {
+        const { AI分析結果, ...rest } = resume; // 解构赋值排除 AI分析結果
+        cleanResume = rest;
+      }
+      
+      // スキル情報をAPIから取得
+      const skillPayload = await getSkillPayloadByPersonnelId(p.人材ＩＤ);
+      const skillsMap = {};
+      if (skillPayload?.スキル) {
+        skillPayload.スキル.forEach(skill => {
+          skillsMap[skill.スキル名] = skill.スキル点数;
+        });
+      }
+
+      // AI分析用のリクエスト構造に変換
+      req.push({
+        id: p.人材ＩＤ,
+        経歴情報: resume || {},        // 経歴が存在しない場合は空オブジェクト
+        スキル採点情報: skillsMap,       // スキルが存在しない場合は空配列
+      });
+    }
+
+    // AI分析APIを呼び出し
+    const { data } = await http.post<ProposalAnalyseResult[]>('/api/proposal/analyse', {
+      募集要項: jobDescription.value,
+      候補要員: req,
+    });
+    console.log('AI response:', data);
+
+    await delay(undefined, 1000);
+
+    // 分析結果をフロントエンド形式に変換
+    const results: CandidateAnalysis[] = [];
+    data.forEach((res) => {
+      results.push({
+        人材ID: res.人材ID,
+        名前: nameMap.get(res.人材ID) ?? '',
+        マッチ率: res.マッチ率,
+        コメント: res.理由,
+        スキル採点: res.スキル採点,
+      });
+    });
+
+    // マッチ率が高い順にソート
+    results.sort((a, b) => b.マッチ率 - a.マッチ率);
+    analysisResults.value = results;
+    toast.show('適任要員の分析が完了しました', 'success');
+  } catch (e) {
+    errorMessage.value = '適任要員の分析に失敗しました';
+    errorOpen.value = true;
+  } finally {
+    analyzing.value = false;
+  }
+}
 
   function onOpenSkill(id: string) {
     skillTargetId.value = id;
@@ -479,11 +525,22 @@
 
   function onSave() {
     if (!canSave.value) return;
+    const actualProposalId = proposalId.value || generateUuid();
+    const 対象人材 = candidates.value.map(p => ({
+      talentId: p.人材ＩＤ,        // ← 
+      company: p.所属会社,
+      name: p.名前,
+      employeeNumber: p.社員番号,
+      birthDate: p.生年月日,
+      projectEndDate: p.現案件終了年月日,
+      bpFlag: p.BPフラグ,
+      // 注意：deletedFlag 
+    }));
     const payload: Proposal = {
-      提案ID: proposalId.value,
+      提案ID: actualProposalId,
       提案名: proposalName.value.trim(),
       募集要項: jobDescription.value.trim(),
-      対象人材: candidates.value,
+      対象人材:  対象人材,
       分析結果: analysisResults.value,
     };
     emit('save', payload);

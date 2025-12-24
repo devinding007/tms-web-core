@@ -120,19 +120,35 @@
   // 初期スナップショットを保持（dirty判定用）
   const original = ref('');
   watch(
-    () => props.item,
-    async (v) => {
-      form.人材ＩＤ = v?.人材ＩＤ || '';
-      form.所属会社 = v?.所属会社 || '';
-      form.名前 = v?.名前 || '';
-      form.社員番号 = v?.社員番号 || '';
-      form.生年月日 = v?.生年月日 || '';
-      form.現案件終了年月日 = v?.現案件終了年月日 || '';
-      form.BPフラグ = v?.BPフラグ ?? 0;
-      if (!form.生年月日) 生年月日_date.value = undefined;
-      else 生年月日_date.value = new Date(form.生年月日);
-      if (!form.現案件終了年月日) 案件終了日_date.value = undefined;
-      else 案件終了日_date.value = new Date(form.現案件終了年月日);
+    () => [props.open, props.item],
+    async ([isOpen, item]) => {
+      if (!isOpen) return;
+
+      // 每次弹窗打开时，根据 item 初始化表单
+      if (item) {
+        form.人材ＩＤ = item.人材ＩＤ || '';
+        form.所属会社 = item.所属会社 || '';
+        form.名前 = item.名前 || '';
+        form.社員番号 = item.社員番号 || '';
+        form.生年月日 = item.生年月日 || '';
+        form.現案件終了年月日 = item.現案件終了年月日 || '';
+        form.BPフラグ = item.BPフラグ ?? 0;
+
+        生年月日_date.value = item.生年月日 ? new Date(item.生年月日) : undefined;
+        案件終了日_date.value = item.現案件終了年月日 ? new Date(item.現案件終了年月日) : undefined;
+      } else {
+        // 新規登録：清空所有字段
+        form.人材ＩＤ = '';
+        form.所属会社 = '';
+        form.名前 = '';
+        form.社員番号 = '';
+        form.生年月日 = '';
+        form.現案件終了年月日 = '';
+        form.BPフラグ = 0;
+
+        生年月日_date.value = undefined;
+        案件終了日_date.value = undefined;
+      }
 
       await nextTick();
       original.value = JSON.stringify(form);

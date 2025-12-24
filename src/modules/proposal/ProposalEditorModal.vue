@@ -19,7 +19,7 @@
       </v-toolbar>
 
       <v-card-text class="flex-grow-1 overflow-y-auto">
-        <ProposalEditor ref="editorRef" :proposal-id="proposalId" @save="onSave" :saving="saving" />
+        <ProposalEditor ref="editorRef" :proposal-id="proposalId" :is-editing="isEditing" @save="onSave" :saving="saving" />
       </v-card-text>
 
       <v-card-actions>
@@ -49,10 +49,12 @@
     defineProps<{
       open: boolean;
       proposalId: string | null;
+      isEditing: boolean;
       saving?: boolean;
     }>(),
     {
       saving: false,
+      isEditing: false,
     }
   );
   const editorRef = ref<InstanceType<typeof ProposalEditor> | null>(null);
@@ -66,7 +68,7 @@
   watch(
     () => props.open,
     async (v) => {
-      if (v) {
+      if (v && props.isEditing) {
         await nextTick();
         editorRef.value?.load();
       }
